@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "お問い合わせ | Seichi Atlas";
+const description = "Seichi Atlas / 聖地ポータルへのお問い合わせ、削除依頼、権利侵害の申し立て、不具合報告はこちらからお願いします。";
+---
+
+<BaseLayout title={title} description={description} canonical="/contact">
+  <main class="legal-page">
+    <header class="legal-header">
+      <p class="kicker">Contact</p>
+      <h1>お問い合わせ</h1>
+      <p>
+        Seichi Atlas / 聖地ポータルに関するお問い合わせ、削除依頼、権利侵害の申し立て、
+        不具合報告などはこちらからお願いします。
+      </p>
+    </header>
+
+    <section>
+      <h2>お問い合わせ先</h2>
+      <p>
+        現在、お問い合わせは以下のメールアドレスにて受け付けています。
+      </p>
+      <p>
+        <a href="mailto:higutetsu31415@gmail.com">higutetsu31415@gmail.com</a>
+      </p>
+    </section>
+
+    <section>
+      <h2>お問い合わせ時に記載してほしい内容</h2>
+      <p>
+        内容に応じて、以下の情報を記載してください。
+      </p>
+
+      <ol>
+        <li>お問い合わせ内容</li>
+        <li>対象となる作品名または聖地名</li>
+        <li>対象ページや該当箇所がわかる情報</li>
+        <li>削除・修正を希望する理由</li>
+        <li>返信先メールアドレス</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>削除依頼について</h2>
+      <p>
+        本サービス上に、個人情報、個人宅住所、第三者の権利を侵害する情報、
+        立入禁止場所、迷惑行為につながる情報、不適切な情報等が掲載されている場合、
+        削除または修正の依頼を受け付けます。
+      </p>
+      <p>
+        内容を確認し、必要と判断した場合、該当情報の削除、修正、非表示等の対応を行います。
+      </p>
+    </section>
+
+    <section>
+      <h2>権利侵害の申し立てについて</h2>
+      <p>
+        著作権、商標権、肖像権、プライバシーその他の権利を侵害している可能性がある情報を発見した場合は、
+        対象箇所と理由を明記のうえ、ご連絡ください。
+      </p>
+      <p>
+        権利者または関係者からの申し立てについては、内容確認のうえ、必要な対応を行います。
+      </p>
+    </section>
+
+    <section>
+      <h2>返信について</h2>
+      <p>
+        すべてのお問い合わせに対して返信を保証するものではありません。
+        内容確認のうえ、必要に応じて対応または返信します。
+      </p>
+    </section>
+  </main>
+</BaseLayout>

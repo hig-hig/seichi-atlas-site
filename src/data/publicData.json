@@ -1,0 +1,61 @@
+{
+  "works": [
+    {
+      "id": "1",
+      "title": "サンプル作品A",
+      "slug": "sample-a",
+      "year": "2024",
+      "area": "東京都",
+      "areaSlug": "tokyo",
+      "summary": "東京都を舞台にしたサンプル作品です。",
+      "description": "東京都内の駅前や商店街を中心にしたサンプル作品ページです。",
+      "tags": [
+        "青春",
+        "駅前",
+        "日常"
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "name": "東京都",
+      "slug": "tokyo",
+      "description": "東京都のアニメ聖地巡礼スポットをまとめたエリアページです。",
+      "summary": "東京都の聖地巡礼スポットを探せます。",
+      "works": [
+        "サンプル作品A"
+      ],
+      "spots": [
+        "サンプル駅前"
+      ],
+      "tags": [
+        "駅前",
+        "日常",
+        "写真"
+      ]
+    }
+  ],
+  "spots": [
+    {
+      "id": "1",
+      "name": "サンプル駅前",
+      "slug": "sample-station",
+      "work": "サンプル作品A",
+      "workSlug": "sample-a",
+      "prefecture": "東京都",
+      "areaSlug": "tokyo",
+      "station": "サンプル駅",
+      "lat": 35.681236,
+      "lng": 139.767125,
+      "officialLevel": "モデル地",
+      "description": "作中の駅前シーンを思わせるサンプルスポットです。",
+      "access": "サンプル駅から徒歩1分",
+      "note": "周辺の通行人や店舗に配慮してください。",
+      "tags": [
+        "駅前",
+        "日常",
+        "写真"
+      ]
+    }
+  ]
+}

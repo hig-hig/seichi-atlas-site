@@ -1,0 +1,100 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "アプリを開く | Seichi Atlas";
+const description = "Seichi Atlas / 聖地ポータルのアプリ本体を開くページです。利用前に、非公式サービスであることや聖地巡礼時の注意事項をご確認ください。";
+
+// TODO: GAS WebアプリのURLが決まったら差し替える
+const appUrl = "#";
+---
+
+<BaseLayout title={title} description={description} canonical="/app">
+  <main class="page">
+    <section class="app-hero">
+      <p class="kicker">Open App</p>
+
+      <h1>Seichi Atlasを開く</h1>
+
+      <p class="app-lead">
+        Seichi Atlasは、アニメ・漫画等の聖地巡礼を地図と訪問記録で管理できる非公式ツールです。
+        利用前に、以下の注意事項をご確認ください。
+      </p>
+
+      <div class="app-card">
+        <h2>利用前の確認</h2>
+
+        <ul>
+          <li>本サービスは各作品・権利者・自治体・施設等とは関係のない非公式サービスです。</li>
+          <li>掲載情報の正確性、最新性、立入可否、撮影可否を保証するものではありません。</li>
+          <li>聖地を訪問する際は、現地のルール、施設の案内、近隣住民への配慮を必ず守ってください。</li>
+          <li>私有地や立入禁止区域への侵入、迷惑行為は禁止です。</li>
+          <li>ユーザー別管理を利用する場合、訪問記録等がユーザーごとに保存される場合があります。</li>
+        </ul>
+
+        <div class="app-actions">
+          <a class="button-primary" href={appUrl} target="_blank" rel="noopener noreferrer">
+            アプリ本体を開く
+          </a>
+
+          <a class="button-secondary" href="/terms">
+            利用規約を確認する
+          </a>
+        </div>
+
+        <p class="app-note">
+          ※ 現在、アプリ本体URLは公開準備中です。GAS WebアプリのURLが決まり次第、このボタンに接続します。
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .app-hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 0 20px;
+    }
+
+    .app-lead {
+      color: var(--sub);
+      font-size: 17px;
+      max-width: 720px;
+    }
+
+    .app-card {
+      margin-top: 32px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .app-card h2 {
+      border: none;
+      margin-top: 0;
+      padding-bottom: 0;
+    }
+
+    .app-card ul {
+      padding-left: 1.4em;
+      color: var(--sub);
+    }
+
+    .app-card li {
+      margin: 8px 0;
+    }
+
+    .app-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+
+    .app-note {
+      margin-top: 18px;
+      color: var(--sub);
+      font-size: 13px;
+    }
+  </style>
+</BaseLayout>

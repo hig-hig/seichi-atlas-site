@@ -1,0 +1,275 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { spots } from "../data/portalData.js";
+
+const title = "聖地スポットから探す | Seichi Atlas";
+const description = "Seichi Atlasの聖地スポット一覧ページです。アニメや漫画の聖地巡礼スポットを、地域・作品・タグから探せます。";
+---
+
+<BaseLayout title={title} description={description} canonical="/spots">
+  <main class="page">
+    <section class="content-hero">
+      <p class="kicker">Spots</p>
+
+      <h1>聖地スポットから探す</h1>
+
+      <p class="lead">
+        作品や地域だけでなく、聖地スポット単位でも巡礼先を探せます。
+        気になる場所を見つけたら、記録アプリで訪問済みとして保存できます。
+      </p>
+    </section>
+
+    <section class="spots-intro">
+      <div>
+        <h2>スポット単位で巡礼先を探す</h2>
+        <p>
+          Seichi Atlasでは、作品別・地域別に加えて、聖地スポット単位でも情報を整理していきます。
+          今後、SpreadsheetのLocationデータをもとに、スポットページを拡張していく予定です。
+        </p>
+      </div>
+
+      <a class="button-primary" href="/app">地図で探す</a>
+    </section>
+
+    <section class="section">
+      <p class="kicker">List</p>
+      <h2>聖地スポット一覧</h2>
+
+      <div class="spot-grid">
+        {spots.map((spot) => (
+          <article class="spot-card">
+            <div class="spot-card-head">
+              <div>
+                <h3>{spot.name}</h3>
+                <p class="spot-meta">
+                  {spot.prefecture} / {spot.station}
+                </p>
+              </div>
+
+              <div class="spot-icon">📍</div>
+            </div>
+
+            <p class="work-name">
+              関連作品：{spot.work}
+            </p>
+
+            <p class="spot-description">
+              {spot.description}
+            </p>
+
+            <div class="level-pill">
+              {spot.officialLevel}
+            </div>
+
+            <div class="tag-list">
+              {spot.tags.map((tag) => (
+                <span>{tag}</span>
+              ))}
+            </div>
+
+            <div class="spot-actions">
+              <a class="text-link" href={`/spots/${spot.slug}`}>
+                スポット詳細を見る
+              </a>
+              <a class="text-link muted" href="/app">
+                アプリで記録する
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="notice-section">
+      <div>
+        <p class="kicker">Data</p>
+        <h2>スポットデータを共通ファイルから読み込んでいます</h2>
+        <p>
+          このスポット一覧は、共通データファイルから表示しています。
+          今後はSpreadsheetのLocationデータをもとに、スポットページを自動生成していく予定です。
+        </p>
+      </div>
+
+      <a class="button-secondary" href="/manners">マナーを見る</a>
+    </section>
+  </main>
+
+  <style>
+    .content-hero {
+      max-width: 840px;
+      padding: 40px 0 16px;
+    }
+
+    .lead {
+      color: var(--sub);
+      font-size: 17px;
+      max-width: 760px;
+    }
+
+    .spots-intro {
+      margin-top: 36px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .spots-intro h2 {
+      border: none;
+      margin-top: 0;
+      padding-bottom: 0;
+    }
+
+    .spots-intro p {
+      color: var(--sub);
+      max-width: 680px;
+    }
+
+    .section {
+      margin-top: 72px;
+    }
+
+    .section > h2,
+    .notice-section h2 {
+      border: none;
+      margin-top: 0;
+      padding-bottom: 0;
+      font-size: clamp(28px, 4vw, 40px);
+    }
+
+    .spot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .spot-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .spot-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .spot-card h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .spot-meta {
+      margin: 4px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .spot-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #f7f3ee;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .work-name {
+      margin: 0;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .spot-description {
+      color: var(--sub);
+      margin: 0;
+    }
+
+    .level-pill {
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fffaf7;
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid var(--accent);
+    }
+
+    .tag-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .tag-list span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f7f3ee;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .spot-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+
+    .text-link {
+      color: var(--accent-dark);
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .text-link.muted {
+      color: var(--sub);
+    }
+
+    .notice-section {
+      margin-top: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #fffaf7;
+      border: 1px solid var(--accent);
+    }
+
+    .notice-section p {
+      color: var(--sub);
+    }
+
+    @media (max-width: 900px) {
+      .spot-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .spots-intro,
+      .notice-section {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,244 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "使い方 | Seichi Atlas";
+const description = "Seichi Atlas / 聖地ポータルの使い方ページです。作品を選ぶ、聖地を地図で見る、訪問済みとして記録する、マイページで振り返る流れを説明します。";
+---
+
+<BaseLayout title={title} description={description} canonical="/how-to-use">
+  <main class="page">
+    <section class="content-hero">
+      <p class="kicker">How to Use</p>
+
+      <h1>Seichi Atlasの使い方</h1>
+
+      <p class="lead">
+        Seichi Atlasでは、作品ごとの聖地を確認し、訪問した場所を記録して、
+        自分だけの巡礼ログとして振り返ることができます。
+      </p>
+    </section>
+
+    <section class="flow-section">
+      <article class="flow-card">
+        <div class="flow-number">01</div>
+        <div>
+          <h2>作品を選ぶ</h2>
+          <p>
+            トップ画面から気になる作品を選びます。
+            作品ごとに登録されている聖地一覧や巡礼進捗を確認できます。
+          </p>
+        </div>
+      </article>
+
+      <article class="flow-card">
+        <div class="flow-number">02</div>
+        <div>
+          <h2>聖地を確認する</h2>
+          <p>
+            作品詳細画面では、聖地の名前、都道府県、最寄駅、徒歩分、公式度、
+            タグなどを確認できます。
+          </p>
+        </div>
+      </article>
+
+      <article class="flow-card">
+        <div class="flow-number">03</div>
+        <div>
+          <h2>地図で場所を見る</h2>
+          <p>
+            聖地は地図上にも表示されます。
+            気になるスポットを選ぶと、カードと地図が連動して場所を確認できます。
+          </p>
+        </div>
+      </article>
+
+      <article class="flow-card">
+        <div class="flow-number">04</div>
+        <div>
+          <h2>訪問したら記録する</h2>
+          <p>
+            実際に訪れた聖地は「訪問した」として保存できます。
+            訪問済みのスポットは、作品別の進捗やマイページに反映されます。
+          </p>
+        </div>
+      </article>
+
+      <article class="flow-card">
+        <div class="flow-number">05</div>
+        <div>
+          <h2>マイページで振り返る</h2>
+          <p>
+            マイページでは、訪問数、完了作品数、巡礼エリア、バッジ、訪問履歴などを確認できます。
+            自分の巡礼記録をあとから振り返ることができます。
+          </p>
+        </div>
+      </article>
+    </section>
+
+    <section class="content-section">
+      <h2>マップから探す</h2>
+
+      <p>
+        作品を選ばずに、登録されている聖地を地図から探すこともできます。
+        作品名、都道府県、訪問状況、公式度、タグなどで絞り込みながら、
+        気になるスポットを探せます。
+      </p>
+
+      <p>
+        旅行先や近くのエリアから、まだ行っていない聖地を見つけたいときに便利です。
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>訪問記録について</h2>
+
+      <p>
+        訪問記録は、ユーザー別管理を有効にしている場合、ユーザーごとに保存されます。
+        訪問済みスポット、訪問日時、作品ごとの進捗などがマイページに反映されます。
+      </p>
+
+      <p>
+        ユーザー別管理を行わない状態では、デモユーザーとして処理される場合があります。
+      </p>
+    </section>
+
+    <section class="content-section notice-box">
+      <h2>利用前の注意</h2>
+
+      <p>
+        Seichi Atlasは非公式サービスです。掲載情報は正確性や最新性を保証するものではありません。
+        実際に訪問する際は、公式情報、施設案内、現地ルール、撮影可否、立入可否を必ず確認してください。
+      </p>
+
+      <p>
+        私有地や立入禁止区域への侵入、近隣住民や施設への迷惑行為は禁止です。
+      </p>
+    </section>
+
+    <section class="cta-section">
+      <div>
+        <p class="kicker">Start</p>
+        <h2>まずはアプリを開いてみる</h2>
+        <p>
+          作品を選んで、聖地一覧と地図を確認してみましょう。
+        </p>
+      </div>
+
+      <a class="button-primary" href="/app">アプリを開く</a>
+    </section>
+  </main>
+
+  <style>
+    .content-hero {
+      max-width: 840px;
+      padding: 40px 0 16px;
+    }
+
+    .lead {
+      color: var(--sub);
+      font-size: 17px;
+      max-width: 760px;
+    }
+
+    .flow-section {
+      margin-top: 36px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .flow-card {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 20px;
+      padding: 26px;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+    }
+
+    .flow-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #f7f3ee;
+      color: var(--accent-dark);
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .flow-card h2 {
+      margin-top: 0;
+      border: none;
+      padding-bottom: 0;
+    }
+
+    .flow-card p {
+      color: var(--sub);
+      margin-bottom: 0;
+    }
+
+    .content-section {
+      margin-top: 42px;
+      padding: 28px;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+    }
+
+    .content-section h2 {
+      margin-top: 0;
+      border: none;
+      padding-bottom: 0;
+    }
+
+    .content-section p {
+      color: var(--sub);
+    }
+
+    .notice-box {
+      border: 1px solid var(--border);
+    }
+
+    .cta-section {
+      margin-top: 56px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #3f352d;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .cta-section h2 {
+      margin-top: 0;
+      border: none;
+      padding-bottom: 0;
+      color: #ffffff;
+    }
+
+    .cta-section p {
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .cta-section .button-primary {
+      background: #ffffff;
+      color: #3f352d;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 760px) {
+      .flow-card {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</BaseLayout>

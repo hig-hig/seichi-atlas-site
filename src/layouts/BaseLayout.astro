@@ -1,0 +1,314 @@
+---
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+const {
+  title = "Seichi Atlas | アニメ聖地巡礼を地図と記録で管理",
+  description = "Seichi Atlasは、アニメや漫画の聖地巡礼を地図・訪問記録・進捗で管理できる非公式ツールです。",
+  canonical = "",
+} = Astro.props;
+
+const siteUrl = "https://seichi-atlas.com";
+const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <link rel="canonical" href={pageUrl} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:site_name" content="Seichi Atlas" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Seichi Atlas",
+      "url": siteUrl,
+      "description": "アニメ・漫画等の聖地巡礼を地図と記録で管理する非公式ツール"
+    })} />
+  </head>
+
+  <body>
+    <Header />
+
+    <slot />
+
+    <Footer />
+
+    <style is:global>
+      :root {
+        --bg: #f7f3ee;
+        --card: #ffffff;
+        --text: #3f352d;
+        --sub: #8a7a6e;
+        --accent: #d4a59a;
+        --accent-dark: #b8867b;
+        --border: #e6d8cd;
+        --shadow: 0 12px 32px rgba(120, 90, 60, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.8;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(247, 243, 238, 0.88);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(230, 216, 205, 0.8);
+      }
+
+      .site-header-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .site-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+      }
+
+      .site-logo-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--accent);
+        color: #ffffff;
+        font-weight: 900;
+      }
+
+      .site-logo-text {
+        letter-spacing: 0.02em;
+      }
+
+      .site-nav {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font-size: 14px;
+        color: var(--sub);
+      }
+
+      .site-nav a:hover {
+        color: var(--accent-dark);
+      }
+
+      .site-nav a:last-child {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--text);
+        color: #ffffff;
+        font-weight: 700;
+      }
+
+      .site-footer {
+        margin-top: 80px;
+        padding: 40px 20px 28px;
+        background: #3f352d;
+        color: #ffffff;
+      }
+
+      .site-footer-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        gap: 32px;
+      }
+
+      .footer-logo {
+        font-weight: 800;
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      .site-footer p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.72);
+        max-width: 520px;
+        font-size: 14px;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 14px;
+      }
+
+      .footer-links a {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .site-footer-note {
+        max-width: 1120px;
+        margin: 28px auto 0;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+        color: rgba(255, 255, 255, 0.56);
+        font-size: 13px;
+      }
+
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 56px 20px 80px;
+      }
+
+      .legal-page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 56px 20px 80px;
+      }
+
+      .legal-header {
+        margin-bottom: 40px;
+        padding: 32px;
+        background: var(--card);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .kicker {
+        margin: 0 0 8px;
+        color: var(--accent-dark);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1.25;
+        letter-spacing: -0.03em;
+      }
+
+      h2 {
+        margin-top: 40px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 22px;
+      }
+
+      h3 {
+        line-height: 1.45;
+      }
+
+      .legal-page section {
+        background: var(--card);
+        border-radius: 20px;
+        padding: 24px;
+        margin-top: 20px;
+        box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+      }
+
+      p,
+      li {
+        font-size: 15px;
+      }
+
+      .legal-page a {
+        color: #9f6f63;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .date {
+        color: var(--sub);
+        font-size: 14px;
+      }
+
+      .button-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 13px 20px;
+        border-radius: 999px;
+        background: var(--text);
+        color: #ffffff;
+        font-weight: 800;
+        box-shadow: 0 12px 24px rgba(63, 53, 45, 0.18);
+      }
+
+      .button-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 13px 20px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--text);
+        font-weight: 800;
+        border: 1px solid var(--border);
+      }
+
+      @media (max-width: 760px) {
+        .site-header-inner {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .site-nav {
+          width: 100%;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .site-footer-inner {
+          flex-direction: column;
+        }
+
+        .legal-header {
+          padding: 24px;
+        }
+
+        .legal-page section {
+          padding: 20px;
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,217 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Seichi Atlasとは | アニメ聖地巡礼を地図と記録で管理";
+const description = "Seichi Atlasは、アニメや漫画の聖地巡礼を地図・訪問記録・進捗で管理できる非公式ツールです。作品ごとの聖地、訪問済みスポット、マイ巡礼マップをまとめて確認できます。";
+---
+
+<BaseLayout title={title} description={description} canonical="/about">
+  <main class="page">
+    <section class="content-hero">
+      <p class="kicker">About</p>
+
+      <h1>Seichi Atlasとは</h1>
+
+      <p class="lead">
+        Seichi Atlasは、アニメ・漫画等の聖地巡礼を、地図と訪問記録で管理するための非公式ツールです。
+        作品ごとの聖地、訪問済みスポット、巡礼進捗、マイ巡礼マップをまとめて確認できます。
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>聖地巡礼を、あとから振り返れる記録に</h2>
+
+      <p>
+        聖地巡礼は、作品の舞台やモデルになった場所を訪れる楽しみ方です。
+        ただ、訪れた場所が増えてくると、どの作品のどこに行ったのか、
+        どの地域を巡ったのか、まだ行っていない場所はどこかが分かりにくくなります。
+      </p>
+
+      <p>
+        Seichi Atlasでは、作品ごとの聖地を確認しながら、訪問済みの場所を記録できます。
+        訪問記録はマイページやマイ巡礼マップに反映され、これまでの巡礼を振り返りやすくなります。
+      </p>
+    </section>
+
+    <section class="content-section">
+      <h2>主な機能</h2>
+
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>作品ごとの聖地管理</h3>
+          <p>
+            作品別に登録された聖地を一覧で確認できます。
+            訪問済み・未訪問の状態も分かりやすく表示します。
+          </p>
+        </article>
+
+        <article class="info-card">
+          <h3>地図で探す</h3>
+          <p>
+            聖地の位置を地図上で確認できます。
+            作品横断でスポットを探すこともできます。
+          </p>
+        </article>
+
+        <article class="info-card">
+          <h3>訪問記録</h3>
+          <p>
+            実際に訪れた聖地を訪問済みとして保存できます。
+            訪問履歴としてあとから見返せます。
+          </p>
+        </article>
+
+        <article class="info-card">
+          <h3>マイページ</h3>
+          <p>
+            訪問数、完了作品数、巡礼エリアなどをまとめて確認できます。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <h2>こんな人に向いています</h2>
+
+      <ul class="check-list">
+        <li>アニメや漫画の聖地巡礼を記録したい人</li>
+        <li>訪問済みの聖地を地図で振り返りたい人</li>
+        <li>作品ごとの巡礼進捗を管理したい人</li>
+        <li>次に行きたい聖地を探したい人</li>
+        <li>巡礼の思い出を整理したい人</li>
+      </ul>
+    </section>
+
+    <section class="content-section notice-box">
+      <h2>非公式サービスです</h2>
+
+      <p>
+        Seichi Atlasは、各作品、出版社、制作会社、著作権者、商標権者、
+        自治体、施設、店舗等が公式に提供・承認・協賛・推薦するものではありません。
+      </p>
+
+      <p>
+        作品名、キャラクター名、施設名、地名、商標等に関する権利は、
+        それぞれの権利者に帰属します。
+      </p>
+    </section>
+
+    <section class="cta-section">
+      <div>
+        <p class="kicker">Get Started</p>
+        <h2>聖地巡礼を記録してみる</h2>
+        <p>
+          作品ごとの聖地を確認し、訪れた場所を自分だけの巡礼ログとして残せます。
+        </p>
+      </div>
+
+      <a class="button-primary" href="/app">アプリを開く</a>
+    </section>
+  </main>
+
+  <style>
+    .content-hero {
+      max-width: 840px;
+      padding: 40px 0 16px;
+    }
+
+    .lead {
+      color: var(--sub);
+      font-size: 17px;
+      max-width: 760px;
+    }
+
+    .content-section {
+      margin-top: 42px;
+      padding: 28px;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+    }
+
+    .content-section h2 {
+      margin-top: 0;
+      border: none;
+      padding-bottom: 0;
+    }
+
+    .content-section p {
+      color: var(--sub);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      padding: 22px;
+      border-radius: 20px;
+      background: #f7f3ee;
+    }
+
+    .info-card h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .info-card p {
+      margin-bottom: 0;
+    }
+
+    .check-list {
+      padding-left: 1.4em;
+      color: var(--sub);
+    }
+
+    .check-list li {
+      margin: 8px 0;
+    }
+
+    .notice-box {
+      border: 1px solid var(--border);
+    }
+
+    .cta-section {
+      margin-top: 56px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #3f352d;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .cta-section h2 {
+      margin-top: 0;
+      border: none;
+      padding-bottom: 0;
+      color: #ffffff;
+    }
+
+    .cta-section p {
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .cta-section .button-primary {
+      background: #ffffff;
+      color: #3f352d;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 760px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</BaseLayout>

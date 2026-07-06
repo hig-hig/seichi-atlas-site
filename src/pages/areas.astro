@@ -1,0 +1,249 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { areas } from "../data/portalData.js";
+
+const title = "地域から探す | Seichi Atlas";
+const description = "Seichi Atlasの地域別ページです。東京、京都、北海道など、都道府県ごとにアニメや漫画の聖地巡礼スポットを探せます。";
+---
+
+<BaseLayout title={title} description={description} canonical="/areas">
+  <main class="page">
+    <section class="content-hero">
+      <p class="kicker">Areas</p>
+
+      <h1>地域から聖地を探す</h1>
+
+      <p class="lead">
+        都道府県やエリアを起点に、アニメ・漫画等の聖地巡礼スポットを探せます。
+        旅行先や近くの地域から、気になる聖地を見つけましょう。
+      </p>
+    </section>
+
+    <section class="areas-intro">
+      <div>
+        <h2>地域別に巡礼スポットを整理</h2>
+        <p>
+          Seichi Atlasでは、作品別だけでなく地域別にも聖地を探せるポータルを目指しています。
+          今後、Spreadsheetの聖地データをもとに、都道府県別ページを拡張していきます。
+        </p>
+      </div>
+
+      <a class="button-primary" href="/works">作品から探す</a>
+    </section>
+
+    <section class="section">
+      <p class="kicker">List</p>
+      <h2>地域一覧</h2>
+
+      <div class="area-grid">
+        {areas.map((area) => (
+          <article class="area-card">
+            <div class="area-card-head">
+              <div>
+                <h3>{area.name}</h3>
+                <p class="area-meta">
+                  {area.works} works / {area.spots} spots
+                </p>
+              </div>
+
+              <div class="area-icon">🗾</div>
+            </div>
+
+            <p class="area-description">
+              {area.description}
+            </p>
+
+            <div class="tag-list">
+              {area.tags.map((tag) => (
+                <span>{tag}</span>
+              ))}
+            </div>
+
+            <div class="area-actions">
+              <a class="text-link" href={`/areas/${area.slug}`}>
+                地域ページを見る
+              </a>
+              <a class="text-link muted" href="/app">
+                地図で探す
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="notice-section">
+      <div>
+        <p class="kicker">Data</p>
+        <h2>地域データを共通ファイルから読み込んでいます</h2>
+        <p>
+          この地域一覧は、共通データファイルから表示しています。
+          今後はSpreadsheetのLocationデータをもとに、都道府県別ページを自動生成していく予定です。
+        </p>
+      </div>
+
+      <a class="button-secondary" href="/manners">マナーを見る</a>
+    </section>
+  </main>
+
+  <style>
+    .content-hero {
+      max-width: 840px;
+      padding: 40px 0 16px;
+    }
+
+    .lead {
+      color: var(--sub);
+      font-size: 17px;
+      max-width: 760px;
+    }
+
+    .areas-intro {
+      margin-top: 36px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .areas-intro h2 {
+      border: none;
+      margin-top: 0;
+      padding-bottom: 0;
+    }
+
+    .areas-intro p {
+      color: var(--sub);
+      max-width: 680px;
+    }
+
+    .section {
+      margin-top: 72px;
+    }
+
+    .section > h2,
+    .notice-section h2 {
+      border: none;
+      margin-top: 0;
+      padding-bottom: 0;
+      font-size: clamp(28px, 4vw, 40px);
+    }
+
+    .area-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .area-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .area-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .area-card h3 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .area-meta {
+      margin: 4px 0 0;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    .area-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #f7f3ee;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .area-description {
+      color: var(--sub);
+      margin: 0;
+    }
+
+    .tag-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .tag-list span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f7f3ee;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .area-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+
+    .text-link {
+      color: var(--accent-dark);
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .text-link.muted {
+      color: var(--sub);
+    }
+
+    .notice-section {
+      margin-top: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 32px;
+      border-radius: 28px;
+      background: #fffaf7;
+      border: 1px solid var(--accent);
+    }
+
+    .notice-section p {
+      color: var(--sub);
+    }
+
+    @media (max-width: 900px) {
+      .area-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .areas-intro,
+      .notice-section {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</BaseLayout>
