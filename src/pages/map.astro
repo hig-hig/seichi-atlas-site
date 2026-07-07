@@ -1488,7 +1488,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         zoomControl: false,
         scrollWheelZoom: false,
         touchZoom: true,
-        zoomSnap: 1,
+        zoomSnap: 0.5,
         zoomDelta: 1,
         doubleClickZoom: false,
         inertia: true,
@@ -1501,11 +1501,13 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         position: "bottomright",
       }).addTo(mapInstance);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap &copy; CARTO",
         subdomains: "abcd",
         maxZoom: 20,
-      }).addTo(mapInstance);
+        }).addTo(mapInstance);
+
+        enableDesktopPinchZoom();
 
       mapInstance.on("click", () => {
         clearActiveLocation();
@@ -1529,6 +1531,53 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         mapInstance.invalidateSize();
         }, 100);
     }
+
+
+    function enableDesktopPinchZoom() {
+        if (!mapInstance) {
+            return;
+        }
+
+        const mapElement = mapInstance.getContainer();
+
+        if (!mapElement) {
+            return;
+        }
+
+        let lastPinchZoomAt = 0;
+
+        mapElement.addEventListener("wheel", (event) => {
+            if (!event.ctrlKey) {
+            return;
+            }
+
+            event.preventDefault();
+
+            const now = Date.now();
+
+            if (now - lastPinchZoomAt < 56) {
+            return;
+            }
+
+            lastPinchZoomAt = now;
+
+            const currentZoom = mapInstance.getZoom();
+            const direction = event.deltaY < 0 ? 1 : -1;
+            const nextZoom = currentZoom + direction * 0.5;
+
+            const minZoom = mapInstance.getMinZoom();
+            const maxZoom = mapInstance.getMaxZoom();
+
+            const safeZoom = Math.max(minZoom, Math.min(maxZoom, nextZoom));
+            const point = mapInstance.mouseEventToContainerPoint(event);
+
+            mapInstance.setZoomAround(point, safeZoom, {
+            animate: true,
+            });
+        }, {
+            passive: false,
+        });
+        }
 
     function fitMapToLocations(items) {
       if (!mapInstance || !items.length) {
