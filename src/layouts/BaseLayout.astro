@@ -16,7 +16,7 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
   <head>
     <meta charset="UTF-8" />
     <meta name="google-site-verification" content="1gzTK7CCqdVLe4eIRKoRZQW_aYKlb6kv5sZTsaL4yak" />
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>{title}</title>
@@ -309,6 +309,43 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
         .legal-page section {
           padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+
+          .site-header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          }
+
+          .site-nav {
+            display: none;
+          }
+
+          .site-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+          }
+
+          .site-logo-text {
+            font-size: 22px;
+            white-space: nowrap;
+          }
+
+          .app-link,
+          .app-button,
+          .record-app-link {
+            flex-shrink: 0;
+            white-space: nowrap;
+            padding: 14px 18px;
+            border-radius: 999px;
+            font-size: 16px;
+          }
+
         }
       }
     </style>
