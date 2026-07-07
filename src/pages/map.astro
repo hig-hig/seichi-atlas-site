@@ -1521,8 +1521,8 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         marker.bindPopup(createPopupHtml(location));
 
         marker.on("click", () => {
-        highlightLocation(location.id, {
-            scrollToCard: false,
+        focusLocation(location.id, {
+            fromMarker: true,
         });
         });
 
@@ -1688,15 +1688,17 @@ function resetMapView() {
   }, 80);
 }
 
-function focusLocation(locationId) {
+
+function focusLocation(locationId, options = {}) {
   const id = String(locationId);
   const marker = markerMap[id];
+  const fromMarker = options.fromMarker === true;
 
   if (!marker || !mapInstance) {
     return;
   }
 
-  if (activeLocationId === id) {
+  if (activeLocationId === id && !fromMarker) {
     resetMapView();
     return;
   }
