@@ -217,9 +217,10 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
       }
 
       .site-header-inner {
-        max-width: 1180px;
+        width: calc(100% - 32px);
+        max-width: 1680px;
         margin: 0 auto;
-        padding: 14px 20px;
+        padding: 14px 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -407,7 +408,13 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
       @media (max-width: 480px) {
         .site-header-inner {
-          padding: 12px 14px;
+          width: calc(100% - 24px);
+          padding: 12px 0;
+        }
+        @media (max-width: 820px) {
+          .site-header-inner {
+            width: calc(100% - 24px);
+          }
         }
 
         .site-logo-text {
