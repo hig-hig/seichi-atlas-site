@@ -1380,6 +1380,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
     let activeLocationId = null;
     let activeTag = "all";
     let activeAreaSlug = initialAreaSlug;
+    let currentFilteredLocations = locations;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -1483,17 +1484,18 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
 
       const firstLocation = locations[0];
 
-      mapInstance = L.map("map", {
-        zoomControl: false,
-        scrollWheelZoom: true,
-        zoomSnap: 1,
-        zoomDelta: 1,
-        doubleClickZoom: false,
-        inertia: true,
-        zoomAnimation: true,
-        fadeAnimation: true,
-        markerZoomAnimation: true,
-      }).setView([firstLocation.lat, firstLocation.lng], 12);
+    mapInstance = L.map("map", {
+    zoomControl: false,
+    scrollWheelZoom: false,
+    touchZoom: false,
+    zoomSnap: 1,
+    zoomDelta: 1,
+    doubleClickZoom: false,
+    inertia: true,
+    zoomAnimation: true,
+    fadeAnimation: true,
+    markerZoomAnimation: true,
+    }).setView([firstLocation.lat, firstLocation.lng], 12);
 
       L.control.zoom({
         position: "bottomright",
@@ -1594,19 +1596,11 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
                 ${escapeHtml(location.officialLabel)}
               </div>
 
-              <div class="spot-card-actions">
+                <div class="spot-card-actions">
                 <button class="spot-button" type="button" data-detail-id="${escapeHtml(location.id)}">
-                  詳細を見る
+                    詳細を見る
                 </button>
-
-                <a class="spot-button" href="${detailUrl(location)}">
-                  スポットページ
-                </a>
-
-                <button class="spot-button" type="button" data-map-id="${escapeHtml(location.id)}">
-                  Googleマップ
-                </button>
-              </div>
+                </div>
             </div>
           </article>
         `;
@@ -1625,32 +1619,50 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         });
       });
 
-      spotList.querySelectorAll("[data-map-id]").forEach((button) => {
-        button.addEventListener("click", (event) => {
-          event.stopPropagation();
-          openSpotGoogleMap(button.dataset.mapId);
-        });
-      });
     }
 
+
+
+    function resetMapView() {
+        if (!mapInstance) {
+            return;
+        }
+
+        mapInstance.closePopup();
+        clearActiveLocation();
+
+        const targets = currentFilteredLocations.length > 0
+            ? currentFilteredLocations
+            : locations;
+
+        setTimeout(() => {
+            fitMapToLocations(targets);
+        }, 80);
+        }
+
     function focusLocation(locationId) {
-      const id = String(locationId);
-      const marker = markerMap[id];
+    const id = String(locationId);
+    const marker = markerMap[id];
 
-      if (!marker || !mapInstance) {
+    if (!marker || !mapInstance) {
         return;
-      }
+    }
 
-      const latLng = marker.getLatLng();
+    if (activeLocationId === id) {
+        resetMapView();
+        return;
+    }
 
-      mapInstance.flyTo(latLng, 15, {
+    const latLng = marker.getLatLng();
+
+    mapInstance.flyTo(latLng, 15, {
         animate: true,
         duration: 0.85,
         easeLinearity: 0.25,
-      });
+    });
 
-      marker.openPopup();
-      highlightLocation(id);
+    marker.openPopup();
+    highlightLocation(id);
     }
 
     function highlightLocation(locationId) {
@@ -1731,11 +1743,12 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         return keywordMatch && workMatch && prefectureMatch && officialMatch && tagMatch && areaMatch;
       });
 
-      renderSpotList(filtered);
-      syncMarkers(filtered);
-      updateResultCount(filtered.length);
-      updateSummary(filtered.length);
-      updateEmptyState(filtered.length);
+        currentFilteredLocations = filtered;
+        renderSpotList(filtered);
+        syncMarkers(filtered);
+        updateResultCount(filtered.length);
+        updateSummary(filtered.length);
+        updateEmptyState(filtered.length);
     }
 
     function syncMarkers(filtered) {
@@ -2047,6 +2060,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       });
     });
 
+    currentFilteredLocations = locations;
     renderSpotList(locations);
     updateResultCount(locations.length);
     updateSummary(locations.length);
