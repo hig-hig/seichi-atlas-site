@@ -1521,7 +1521,9 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         marker.bindPopup(createPopupHtml(location));
 
         marker.on("click", () => {
-          highlightLocation(location.id);
+        highlightLocation(location.id, {
+            scrollToCard: false,
+        });
         });
 
         markerMap[String(location.id)] = marker;
@@ -1555,7 +1557,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
 
             const now = Date.now();
 
-            if (now - lastPinchZoomAt < 56) {
+            if (now - lastPinchZoomAt < 44) {
             return;
             }
 
@@ -1563,7 +1565,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
 
             const currentZoom = mapInstance.getZoom();
             const direction = event.deltaY < 0 ? 1 : -1;
-            const nextZoom = currentZoom + direction * 0.5;
+            const nextZoom = currentZoom + direction * 0.75;
 
             const minZoom = mapInstance.getMinZoom();
             const maxZoom = mapInstance.getMaxZoom();
@@ -1579,190 +1581,194 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         });
         }
 
-    function fitMapToLocations(items) {
-      if (!mapInstance || !items.length) {
-        return;
-      }
+function fitMapToLocations(items) {
+  if (!mapInstance || !items.length) {
+    return;
+  }
 
-      const bounds = items
-        .map((location) => [location.lat, location.lng])
-        .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
+  const bounds = items
+    .map((location) => [location.lat, location.lng])
+    .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
 
-      if (!bounds.length) {
-        return;
-      }
+  if (!bounds.length) {
+    return;
+  }
 
-      if (bounds.length === 1) {
-        mapInstance.flyTo(bounds[0], 14, {
-          animate: true,
-          duration: 0.7,
-        });
-
-        return;
-      }
-
-      mapInstance.fitBounds(bounds, {
-        padding: [56, 56],
-        maxZoom: 13,
-        animate: true,
-        duration: 0.7,
-      });
-    }
-
-    function renderSpotList(items) {
-      if (!spotList) {
-        return;
-      }
-
-      if (!items.length) {
-        spotList.innerHTML =
-          '<div class="empty-list-card">' +
-            '<h3>表示できるスポットがありません</h3>' +
-            '<p>検索条件を変更するか、条件をリセットしてください。</p>' +
-          '</div>';
-
-        return;
-      }
-
-      spotList.innerHTML = items.map((location) => {
-        const level = location.officialLevel || "fan";
-
-        return `
-          <article
-            class="spot-card level-${escapeHtml(level)}"
-            data-location-id="${escapeHtml(location.id)}"
-          >
-            <div class="spot-card-main">
-              <div class="spot-card-title">${escapeHtml(location.name)}</div>
-
-              <div class="spot-meta-row">
-                ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
-                ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
-                ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
-              </div>
-
-              <div class="level-pill level-${escapeHtml(level)}">
-                ${escapeHtml(location.officialLabel)}
-              </div>
-
-                <div class="spot-card-actions">
-                <button class="spot-button" type="button" data-detail-id="${escapeHtml(location.id)}">
-                    詳細を見る
-                </button>
-                </div>
-            </div>
-          </article>
-        `;
-      }).join("");
-
-      spotList.querySelectorAll(".spot-card").forEach((card) => {
-        card.addEventListener("click", () => {
-          focusLocation(card.dataset.locationId);
-        });
-      });
-
-      spotList.querySelectorAll("[data-detail-id]").forEach((button) => {
-        button.addEventListener("click", (event) => {
-          event.stopPropagation();
-          openSpotModal(button.dataset.detailId);
-        });
-      });
-
-    }
-
-
-
-    function resetMapView() {
-        if (!mapInstance) {
-            return;
-        }
-
-        mapInstance.closePopup();
-        clearActiveLocation();
-
-        const targets = currentFilteredLocations.length > 0
-            ? currentFilteredLocations
-            : locations;
-
-        setTimeout(() => {
-            fitMapToLocations(targets);
-        }, 80);
-        }
-
-    function focusLocation(locationId) {
-    const id = String(locationId);
-    const marker = markerMap[id];
-
-    if (!marker || !mapInstance) {
-        return;
-    }
-
-    if (activeLocationId === id) {
-        resetMapView();
-        return;
-    }
-
-    const latLng = marker.getLatLng();
-
-    mapInstance.flyTo(latLng, 15, {
-        animate: true,
-        duration: 0.85,
-        easeLinearity: 0.25,
+  if (bounds.length === 1) {
+    mapInstance.flyTo(bounds[0], 13, {
+      animate: true,
+      duration: 0.7,
     });
 
-    marker.openPopup();
-    highlightLocation(id);
+    return;
+  }
+
+  mapInstance.fitBounds(bounds, {
+    padding: [88, 88],
+    maxZoom: 11.5,
+    animate: true,
+    duration: 0.7,
+  });
+}
+
+function renderSpotList(items) {
+  if (!spotList) {
+    return;
+  }
+
+  if (!items.length) {
+    spotList.innerHTML =
+      '<div class="empty-list-card">' +
+        '<h3>表示できるスポットがありません</h3>' +
+        '<p>検索条件を変更するか、条件をリセットしてください。</p>' +
+      '</div>';
+
+    return;
+  }
+
+  spotList.innerHTML = items.map((location) => {
+    const level = location.officialLevel || "fan";
+
+    return `
+      <article
+        class="spot-card level-${escapeHtml(level)}"
+        data-location-id="${escapeHtml(location.id)}"
+      >
+        <div class="spot-card-main">
+          <div class="spot-card-title">${escapeHtml(location.name)}</div>
+
+          <div class="spot-meta-row">
+            ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
+            ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
+            ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
+          </div>
+
+          <div class="level-pill level-${escapeHtml(level)}">
+            ${escapeHtml(location.officialLabel)}
+          </div>
+
+          <div class="spot-card-actions">
+            <button class="spot-button" type="button" data-detail-id="${escapeHtml(location.id)}">
+              詳細を見る
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  spotList.querySelectorAll(".spot-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      focusLocation(card.dataset.locationId);
+    });
+  });
+
+  spotList.querySelectorAll("[data-detail-id]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openSpotModal(button.dataset.detailId);
+    });
+  });
+}
+
+function resetMapView() {
+  if (!mapInstance) {
+    return;
+  }
+
+  mapInstance.closePopup();
+  clearActiveLocation();
+
+  const targets = currentFilteredLocations.length > 0
+    ? currentFilteredLocations
+    : locations;
+
+  setTimeout(() => {
+    fitMapToLocations(targets);
+  }, 80);
+}
+
+function focusLocation(locationId) {
+  const id = String(locationId);
+  const marker = markerMap[id];
+
+  if (!marker || !mapInstance) {
+    return;
+  }
+
+  if (activeLocationId === id) {
+    resetMapView();
+    return;
+  }
+
+  const latLng = marker.getLatLng();
+
+  mapInstance.flyTo(latLng, 15, {
+    animate: true,
+    duration: 0.85,
+    easeLinearity: 0.25,
+  });
+
+  marker.openPopup();
+
+  highlightLocation(id, {
+    scrollToCard: false,
+  });
+}
+
+function highlightLocation(locationId, options = {}) {
+  const id = String(locationId);
+  const shouldScrollToCard = options.scrollToCard === true;
+
+  activeLocationId = id;
+
+  document.querySelectorAll(".spot-card").forEach((card) => {
+    if (card.dataset.locationId === id) {
+      card.classList.add("active");
+
+      if (shouldScrollToCard) {
+        setTimeout(() => {
+          card.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 100);
+      }
+    } else {
+      card.classList.remove("active");
+    }
+  });
+
+  Object.keys(markerMap).forEach((markerId) => {
+    const marker = markerMap[markerId];
+    const location = locations.find((item) => String(item.id) === String(markerId));
+
+    if (!marker || !location) {
+      return;
     }
 
-    function highlightLocation(locationId) {
-      const id = String(locationId);
-      activeLocationId = id;
+    marker.setIcon(createMarkerIcon(location, markerId === id));
+  });
+}
 
-      document.querySelectorAll(".spot-card").forEach((card) => {
-        if (card.dataset.locationId === id) {
-          card.classList.add("active");
+function clearActiveLocation() {
+  activeLocationId = null;
 
-          setTimeout(() => {
-            card.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }, 100);
-        } else {
-          card.classList.remove("active");
-        }
-      });
+  document.querySelectorAll(".spot-card").forEach((card) => {
+    card.classList.remove("active");
+  });
 
-      Object.keys(markerMap).forEach((markerId) => {
-        const marker = markerMap[markerId];
-        const location = locations.find((item) => String(item.id) === String(markerId));
+  Object.keys(markerMap).forEach((markerId) => {
+    const marker = markerMap[markerId];
+    const location = locations.find((item) => String(item.id) === String(markerId));
 
-        if (!marker || !location) {
-          return;
-        }
-
-        marker.setIcon(createMarkerIcon(location, markerId === id));
-      });
+    if (!marker || !location) {
+      return;
     }
 
-    function clearActiveLocation() {
-      activeLocationId = null;
-
-      document.querySelectorAll(".spot-card").forEach((card) => {
-        card.classList.remove("active");
-      });
-
-      Object.keys(markerMap).forEach((markerId) => {
-        const marker = markerMap[markerId];
-        const location = locations.find((item) => String(item.id) === String(markerId));
-
-        if (!marker || !location) {
-          return;
-        }
-
-        marker.setIcon(createMarkerIcon(location, false));
-      });
-    }
+    marker.setIcon(createMarkerIcon(location, false));
+  });
+}
 
     function applyFilters() {
       const keyword = normalizeText(searchInput?.value);
