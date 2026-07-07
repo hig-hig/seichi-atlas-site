@@ -58,6 +58,7 @@ const mapSpots = spots
       slug: spot.slug || "",
       work: spot.work || spot.workTitle || work?.title || "",
       workSlug: spot.workSlug || work?.slug || "",
+      areaSlug: spot.areaSlug || "",
       prefecture: spot.prefecture || "",
       station: spot.station || "",
       lat,
@@ -1369,10 +1370,16 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
     const emptyOverlay = document.getElementById("map-empty-overlay");
     const modalRoot = document.getElementById("modal-root");
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialSpotSlug = urlParams.get("spot") || "";
+    const initialWorkSlug = urlParams.get("work") || "";
+    const initialAreaSlug = urlParams.get("area") || "";
+
     let mapInstance = null;
     let markerMap = {};
     let activeLocationId = null;
     let activeTag = "all";
+    let activeAreaSlug = initialAreaSlug;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -1516,10 +1523,9 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         markerMap[String(location.id)] = marker;
       });
 
-      setTimeout(() => {
+        setTimeout(() => {
         mapInstance.invalidateSize();
-        fitMapToLocations(locations);
-      }, 100);
+        }, 100);
     }
 
     function fitMapToLocations(items) {
@@ -1720,8 +1726,9 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         const prefectureMatch = selectedPrefecture === "all" || location.prefecture === selectedPrefecture;
         const officialMatch = selectedOfficial === "all" || location.officialLevel === selectedOfficial;
         const tagMatch = activeTag === "all" || (location.tags || []).includes(activeTag);
+        const areaMatch = !activeAreaSlug || location.areaSlug === activeAreaSlug;
 
-        return keywordMatch && workMatch && prefectureMatch && officialMatch && tagMatch;
+        return keywordMatch && workMatch && prefectureMatch && officialMatch && tagMatch && areaMatch;
       });
 
       renderSpotList(filtered);
@@ -1795,6 +1802,9 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       if (selectedPrefecture !== "all") {
         labels.push(selectedPrefecture);
       }
+      if (activeAreaSlug) {
+      labels.push("地域: " + activeAreaSlug);
+      }
 
       if (selectedOfficial === "official") {
         labels.push("公式");
@@ -1833,6 +1843,52 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       emptyOverlay.hidden = count !== 0;
     }
 
+
+
+    function applyInitialUrlParams() {
+    if (initialWorkSlug && workFilter) {
+        const targetWorkLocation = locations.find((location) => {
+        return location.workSlug === initialWorkSlug;
+        });
+
+        if (targetWorkLocation?.work) {
+        workFilter.value = targetWorkLocation.work;
+        }
+    }
+
+    applyFilters();
+
+    if (!initialSpotSlug) {
+        return;
+    }
+
+    const targetLocation = locations.find((location) => {
+        return location.slug === initialSpotSlug;
+    });
+
+    if (!targetLocation) {
+        return;
+    }
+
+    setTimeout(() => {
+        const marker = markerMap[String(targetLocation.id)];
+
+        if (marker && mapInstance && !mapInstance.hasLayer(marker)) {
+        if (workFilter) {
+            workFilter.value = "all";
+        }
+
+        activeAreaSlug = "";
+        applyFilters();
+        }
+
+        setTimeout(() => {
+        focusLocation(targetLocation.id);
+        }, 150);
+    }, 250);
+    }
+
+
     function resetFilters() {
       if (searchInput) {
         searchInput.value = "";
@@ -1851,6 +1907,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       }
 
       activeTag = "all";
+      activeAreaSlug = "";
 
       tagButtons.forEach((button) => {
         if (button.dataset.tag === "all") {
@@ -1995,5 +2052,6 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
     updateSummary(locations.length);
     updateEmptyState(locations.length);
     initMap();
+    applyInitialUrlParams();
   </script>
 </BaseLayout>
