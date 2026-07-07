@@ -230,9 +230,13 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         </div>
 
         <div class="map-wrap">
-          <div id="map"></div>
+        <div id="map"></div>
 
-          <div class="map-empty-overlay" id="map-empty-overlay" hidden>
+        <button class="map-reset-view-button" type="button" id="map-reset-view">
+            全体地図に戻る
+        </button>
+
+        <div class="map-empty-overlay" id="map-empty-overlay" hidden>
             <div class="map-empty-box">
               <h3>表示できるスポットがありません</h3>
               <p>検索条件を変更するか、条件をリセットしてください。</p>
@@ -575,6 +579,40 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.35),
         0 16px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .map-reset-view-button {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 700;
+    min-height: 38px;
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    padding: 8px 13px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 950;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(10px);
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .map-reset-view-button:hover {
+    transform: translateY(-1px);
+    background: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 14px 30px rgba(14, 165, 233, 0.24);
+    }
+
+    .map-reset-view-button:active {
+    transform: translateY(0);
     }
 
     .map-empty-overlay {
@@ -1270,6 +1308,13 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
         width: calc(100% - 24px);
         padding: 26px 0 52px;
       }
+      .map-reset-view-button {
+        top: 10px;
+        right: 10px;
+        min-height: 34px;
+        padding: 7px 11px;
+        font-size: 11px;
+        }
 
       .map-hero {
         padding: 22px;
@@ -1363,6 +1408,7 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
     const officialFilter = document.getElementById("official-filter");
     const resetButton = document.getElementById("filter-reset");
     const emptyResetButton = document.getElementById("empty-reset");
+    const mapResetViewButton = document.getElementById("map-reset-view");
     const tagButtons = Array.from(document.querySelectorAll("[data-tag]"));
     const spotList = document.getElementById("spot-list");
     const resultCount = document.getElementById("result-count");
@@ -1705,7 +1751,7 @@ function focusLocation(locationId, options = {}) {
 
   const latLng = marker.getLatLng();
 
-  mapInstance.flyTo(latLng, 15, {
+  mapInstance.flyTo(latLng, 12, {
     animate: true,
     duration: 0.85,
     easeLinearity: 0.25,
@@ -2100,6 +2146,7 @@ function clearActiveLocation() {
     officialFilter?.addEventListener("change", applyFilters);
     resetButton?.addEventListener("click", resetFilters);
     emptyResetButton?.addEventListener("click", resetFilters);
+    mapResetViewButton?.addEventListener("click", resetMapView);
 
     tagButtons.forEach((button) => {
       button.addEventListener("click", () => {
