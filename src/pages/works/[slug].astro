@@ -1,244 +1,829 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { works, getSpotsByWorkSlug } from "../../data/portalData.js";
+import publicData from "../../data/publicData.json";
 
 export function getStaticPaths() {
-  return works.map((work) => ({
-    params: { slug: work.slug },
-    props: { work }
-  }));
+  const worksForPaths = publicData.works ?? [];
+
+  return worksForPaths
+    .filter((work) => work.slug)
+    .map((work) => ({
+      params: { slug: work.slug },
+      props: { currentWork: work },
+    }));
 }
 
-const { work } = Astro.props;
-const relatedSpots = getSpotsByWorkSlug(work.slug);
+const works = publicData.works ?? [];
+const spots = publicData.spots ?? [];
+const areas = publicData.areas ?? [];
 
-const title = `${work.title}の聖地巡礼 | Seichi Atlas`;
-const description = `${work.title}に関連する聖地巡礼スポットを紹介するページです。主な地域、登録スポット、訪問時の注意を確認できます。`;
+const { currentWork } = Astro.props;
+
+const workSlug = currentWork.slug;
+const workTitle = currentWork.title ?? "作品詳細";
+
+const workSummary =
+  currentWork.summary ||
+  currentWork.description ||
+  `${workTitle}に関連する聖地巡礼スポットを、地図・地域・スポット一覧から探せる作品詳細ページです。`;
+
+const workYear = currentWork.year ?? "";
+const canonicalPath = `/works/${workSlug}/`;
+
+function normalizeTags(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  return String(value)
+    .split(/[、,\n|/／]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getAreaName(areaSlug) {
+  const area = areas.find((item) => item.slug === areaSlug);
+  return area?.name || areaSlug || "";
+}
+
+function getSpotTitle(spot) {
+  return spot.name || spot.title || "名称未設定のスポット";
+}
+
+function getOfficialLabel(value) {
+  const key = String(value || "").toLowerCase();
+
+  if (key === "official") return "公式・明示";
+  if (key === "semi") return "関連度高め";
+  if (key === "fan") return "ファン向け候補";
+  if (key === "low") return "参考候補";
+
+  return value || "関連度未設定";
+}
+
+const workSpots = spots.filter((spot) => spot.workSlug === workSlug);
+
+const relatedAreas = areas
+  .map((area) => {
+    const areaSpots = workSpots.filter((spot) => spot.areaSlug === area.slug);
+
+    return {
+      ...area,
+      count: areaSpots.length,
+      spots: areaSpots,
+    };
+  })
+  .filter((area) => area.count > 0)
+  .sort((a, b) => b.count - a.count);
+
+const prefectures = [
+  ...new Set(
+    workSpots
+      .map((spot) => spot.prefecture)
+      .filter(Boolean)
+  ),
+];
+
+const tagCounts = new Map();
+
+workSpots.forEach((spot) => {
+  normalizeTags(spot.tags).forEach((tag) => {
+    tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+  });
+});
+
+normalizeTags(currentWork.tags).forEach((tag) => {
+  tagCounts.set(tag, Math.max(tagCounts.get(tag) || 0, 1));
+});
+
+const relatedTags = [...tagCounts.entries()]
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 16);
+
+const featuredSpots = workSpots.slice(0, 8);
+
+const mapPageUrl = `/map/?work=${workSlug}`;
+const spotsPageUrl = `/spots/?work=${workSlug}`;
+
+const pageTitle = `${workTitle}の聖地巡礼スポット一覧`;
+const pageDescription =
+  `${workTitle}に関連する聖地巡礼スポットを、地域・地図・スポット一覧から探せる作品詳細ページです。`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: pageTitle,
+  description: pageDescription,
+  url: `https://seichi-atlas-site.vercel.app${canonicalPath}`,
+  isPartOf: {
+    "@type": "WebSite",
+    name: "Seichi Atlas",
+    url: "https://seichi-atlas-site.vercel.app/",
+  },
+  about: {
+    "@type": "CreativeWork",
+    name: workTitle,
+  },
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: workSpots.length,
+    itemListElement: workSpots.slice(0, 20).map((spot, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: getSpotTitle(spot),
+      url: `https://seichi-atlas-site.vercel.app/spots/${spot.slug}/`,
+    })),
+  },
+};
 ---
 
-<BaseLayout title={title} description={description} canonical={`/works/${work.slug}/`}>
-  <main class="page">
-    <section class="work-hero">
-      <p class="kicker">Work</p>
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  canonical={canonicalPath}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 
-      <h1>{work.title}の聖地巡礼</h1>
-
-      <p class="lead">
-        {work.summary}
-      </p>
-
-      <div class="work-meta-list">
-        <span>{work.year}</span>
-        <span>{work.area}</span>
-        <span>{relatedSpots.length} spots</span>
-      </div>
-
-      <div class="tag-list">
-        {work.tags.map((tag) => (
-          <span>{tag}</span>
-        ))}
-      </div>
-    </section>
-
-    <section class="content-section">
-      <h2>作品について</h2>
-      <p>{work.description}</p>
-      <p>
-        このページでは、作品に関連する聖地巡礼スポットを公開情報として紹介します。
-        この作品に関連する聖地巡礼スポットを確認できます。地図上で場所を見たい場合は、マップページから探せます。
-      </p>
-    </section>
-
-    <section class="content-section">
-      <h2>主な聖地スポット</h2>
-
-      {relatedSpots.length === 0 ? (
-        <p>
-          現在、この作品に関連する公開スポットは登録されていません。
-        </p>
-      ) : (
-        <div class="spot-list">
-          {relatedSpots.map((spot) => (
-            <article class="spot-card">
-              <h3>{spot.name}</h3>
-              <p class="spot-meta">
-                {spot.prefecture} / 最寄り：{spot.station}
-              </p>
-              <p>{spot.description}</p>
-
-              <a class="text-link" href={`/spots/${spot.slug}`}>
-                スポット詳細を見る
-              </a>
-            </article>
-          ))}
+  <main class="work-detail-page">
+    <section class="hero-section">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="/">HOME</a>
+          <span>/</span>
+          <a href="/works/">作品から探す</a>
+          <span>/</span>
+          <span>{workTitle}</span>
         </div>
-      )}
-    </section>
 
-    <section class="content-section notice-box">
-      <h2>訪問時の注意</h2>
-      <p>
-        掲載情報は訪問を推奨・保証するものではありません。
-        実際に訪問する際は、現地のルール、立入可否、撮影可否、施設案内、交通状況を必ず確認してください。
-      </p>
-      <p>
-        私有地や立入禁止区域への侵入、近隣住民や施設への迷惑行為は禁止です。
-      </p>
-    </section>
+        <div class="hero-card">
+          <div class="hero-main">
+            <p class="eyebrow">作品から探す</p>
+            <h1>{workTitle}の聖地巡礼スポット</h1>
 
-    <section class="cta-section">
-      <div>
-        <p class="kicker">Record</p>
-        <h2>この作品の巡礼を記録する</h2>
-        <p>
-          この作品の関連スポットは、スポット一覧やマップページから確認できます。
-        </p>
+            <p class="lead">
+              {workSummary}
+            </p>
+
+            <div class="meta-list">
+              {workYear && (
+                <div class="meta-item">
+                  <span class="meta-label">公開年</span>
+                  <span class="meta-value">{workYear}</span>
+                </div>
+              )}
+
+              <div class="meta-item">
+                <span class="meta-label">スポット数</span>
+                <span class="meta-value">{workSpots.length}件</span>
+              </div>
+
+              <div class="meta-item">
+                <span class="meta-label">関連地域</span>
+                <span class="meta-value">{relatedAreas.length}地域</span>
+              </div>
+
+              <div class="meta-item">
+                <span class="meta-label">都道府県</span>
+                <span class="meta-value">
+                  {prefectures.length ? prefectures.join("・") : "未設定"}
+                </span>
+              </div>
+            </div>
+
+            <div class="hero-actions">
+              <a class="primary-button" href={mapPageUrl}>地図で見る</a>
+              <a class="secondary-button" href={spotsPageUrl}>スポット一覧で見る</a>
+            </div>
+          </div>
+
+          <aside class="hero-side">
+            <p class="side-title">この作品の探し方</p>
+            <ul>
+              <li>まずは地図で位置関係を確認</li>
+              <li>気になる地域から代表スポットを確認</li>
+              <li>各スポット詳細でアクセスや注意事項を確認</li>
+            </ul>
+          </aside>
+        </div>
       </div>
+    </section>
 
-      <a class="button-primary" href="/map/">マップで見る</a>
-      <a class="button-secondary" href="/spots/">スポット一覧へ</a>
+    <section class="content-section">
+      <div class="container two-column-layout">
+        <div class="main-column">
+          <section class="info-card">
+            <div class="section-heading">
+              <p class="eyebrow">Spots</p>
+              <h2>{workTitle}に関連するスポット</h2>
+              <p>
+                この作品に関連する巡礼候補スポットを一覧で確認できます。
+                各スポットの詳細ページでは、所在地メモ・アクセス・関連タグなどを確認できます。
+              </p>
+            </div>
+
+            {featuredSpots.length > 0 ? (
+              <div class="spot-grid">
+                {featuredSpots.map((spot) => {
+                  const spotTags = normalizeTags(spot.tags).slice(0, 4);
+                  const spotTitle = getSpotTitle(spot);
+                  const areaName = getAreaName(spot.areaSlug);
+
+                  return (
+                    <article class="spot-card">
+                      <div class="spot-card-header">
+                        <p class="spot-area">
+                          {spot.prefecture || "地域未設定"}
+                          {areaName && ` / ${areaName}`}
+                        </p>
+                        <span class="official-badge">
+                          {getOfficialLabel(spot.officialLevel)}
+                        </span>
+                      </div>
+
+                      <h3>
+                        <a href={`/spots/${spot.slug}/`}>{spotTitle}</a>
+                      </h3>
+
+                      {spot.description && (
+                        <p class="spot-description">{spot.description}</p>
+                      )}
+
+                      <div class="spot-meta">
+                        {spot.nearestStation && (
+                          <span>最寄り：{spot.nearestStation}</span>
+                        )}
+                        {spot.access && (
+                          <span>{spot.access}</span>
+                        )}
+                      </div>
+
+                      {spotTags.length > 0 && (
+                        <div class="tag-list">
+                          {spotTags.map((tag) => (
+                            <span>{tag}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div class="card-actions">
+                        <a href={`/spots/${spot.slug}/`}>詳細を見る</a>
+                        <a href={`/map/?spot=${spot.slug}`}>地図で見る</a>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div class="empty-card">
+                <p>
+                  この作品に関連するスポットは、まだ登録されていません。
+                </p>
+                <a href="/spots/">スポット一覧を見る</a>
+              </div>
+            )}
+
+            {workSpots.length > featuredSpots.length && (
+              <div class="more-link">
+                <a href={spotsPageUrl}>
+                  {workTitle}のスポットをすべて見る
+                </a>
+              </div>
+            )}
+          </section>
+
+          <section class="info-card">
+            <div class="section-heading">
+              <p class="eyebrow">Areas</p>
+              <h2>関連地域から探す</h2>
+              <p>
+                地域ごとにスポットを見たい場合は、地域ページから回遊できます。
+              </p>
+            </div>
+
+            {relatedAreas.length > 0 ? (
+              <div class="area-list">
+                {relatedAreas.map((area) => (
+                  <article class="area-card">
+                    <div>
+                      <p class="area-count">{area.count}スポット</p>
+                      <h3>
+                        <a href={`/areas/${area.slug}/`}>{area.name}</a>
+                      </h3>
+                      <p>
+                        {area.name}周辺にある{workTitle}関連の巡礼候補スポットを確認できます。
+                      </p>
+                    </div>
+
+                    <div class="card-actions">
+                      <a href={`/areas/${area.slug}/`}>地域ページへ</a>
+                      <a href={`/map/?area=${area.slug}`}>地図で見る</a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div class="empty-card">
+                <p>関連地域はまだ登録されていません。</p>
+              </div>
+            )}
+          </section>
+
+          <section class="info-card notice-card">
+            <div class="section-heading">
+              <p class="eyebrow">Notice</p>
+              <h2>聖地巡礼時の注意</h2>
+            </div>
+
+            <p>
+              掲載しているスポットは、作品を想起させる場所や関連地として整理したものです。
+              訪問時は、現地のルール、交通マナー、撮影可否、私有地への立ち入りに十分注意してください。
+            </p>
+
+            <div class="notice-links">
+              <a href="/manners/">聖地巡礼のマナーを見る</a>
+              <a href="/how-to-use/">このサイトの使い方を見る</a>
+            </div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section class="side-card">
+            <h2>この作品の概要</h2>
+
+            <dl>
+              <div>
+                <dt>作品名</dt>
+                <dd>{workTitle}</dd>
+              </div>
+
+              {workYear && (
+                <div>
+                  <dt>公開年</dt>
+                  <dd>{workYear}</dd>
+                </div>
+              )}
+
+              <div>
+                <dt>登録スポット</dt>
+                <dd>{workSpots.length}件</dd>
+              </div>
+
+              <div>
+                <dt>関連地域</dt>
+                <dd>{relatedAreas.length}地域</dd>
+              </div>
+            </dl>
+          </section>
+
+          {relatedTags.length > 0 && (
+            <section class="side-card">
+              <h2>関連タグ</h2>
+
+              <div class="tag-list side-tags">
+                {relatedTags.map((tag) => (
+                  <span>{tag.name}</span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section class="side-card">
+            <h2>探し方リンク</h2>
+
+            <div class="side-links">
+              <a href={mapPageUrl}>地図で探す</a>
+              <a href={spotsPageUrl}>スポット一覧で探す</a>
+              <a href="/works/">他の作品を見る</a>
+              <a href="/areas/">地域一覧を見る</a>
+            </div>
+          </section>
+        </aside>
+      </div>
     </section>
   </main>
-
-  <style>
-    .work-hero {
-      max-width: 840px;
-      padding: 40px 0 16px;
-    }
-
-    .lead {
-      color: var(--sub);
-      font-size: 17px;
-      max-width: 760px;
-    }
-
-    .work-meta-list {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 24px;
-    }
-
-    .work-meta-list span {
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #ffffff;
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 800;
-      box-shadow: 0 8px 20px rgba(120, 90, 60, 0.05);
-    }
-
-    .tag-list {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-    }
-
-    .tag-list span {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #f7f3ee;
-      color: var(--sub);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .content-section {
-      margin-top: 42px;
-      padding: 28px;
-      border-radius: 24px;
-      background: #ffffff;
-      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
-    }
-
-    .content-section h2 {
-      margin-top: 0;
-      border: none;
-      padding-bottom: 0;
-    }
-
-    .content-section p {
-      color: var(--sub);
-    }
-
-    .spot-list {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-top: 24px;
-    }
-
-    .spot-card {
-      padding: 22px;
-      border-radius: 20px;
-      background: #f7f3ee;
-    }
-
-    .spot-card h3 {
-      margin: 0 0 6px;
-    }
-
-    .spot-card p {
-      margin-bottom: 12px;
-    }
-
-    .spot-meta {
-      color: var(--accent-dark);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .text-link {
-      color: var(--accent-dark);
-      font-weight: 800;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .notice-box {
-      border: 1px solid var(--border);
-    }
-
-    .cta-section {
-      margin-top: 56px;
-      padding: 32px;
-      border-radius: 28px;
-      background: #3f352d;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 28px;
-    }
-
-    .cta-section h2 {
-      margin-top: 0;
-      border: none;
-      padding-bottom: 0;
-      color: #ffffff;
-    }
-
-    .cta-section p {
-      color: rgba(255, 255, 255, 0.74);
-    }
-
-    .cta-section .button-primary {
-      background: #ffffff;
-      color: #3f352d;
-      flex-shrink: 0;
-    }
-
-    @media (max-width: 760px) {
-      .spot-list {
-        grid-template-columns: 1fr;
-      }
-
-      .cta-section {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
 </BaseLayout>
+
+<style>
+  .work-detail-page {
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 32rem),
+      var(--bg);
+    min-height: 100vh;
+  }
+
+  .container {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+  }
+
+  .hero-section {
+    padding: 40px 0 28px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    color: var(--sub);
+    font-size: 0.88rem;
+    margin-bottom: 18px;
+  }
+
+  .breadcrumb a {
+    color: var(--accent-dark);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .hero-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow);
+    padding: 32px;
+  }
+
+  .eyebrow {
+    color: var(--accent-dark);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    margin: 0 0 8px;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  h1 {
+    color: var(--text);
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    margin-bottom: 18px;
+  }
+
+  .lead {
+    color: var(--sub);
+    font-size: 1.04rem;
+    line-height: 1.9;
+    max-width: 760px;
+    margin-bottom: 24px;
+  }
+
+  .meta-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .meta-item {
+    background: var(--card-subtle);
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .meta-label {
+    display: block;
+    color: var(--sub);
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .meta-value {
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  .hero-actions,
+  .card-actions,
+  .notice-links,
+  .side-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .card-actions a,
+  .notice-links a,
+  .side-links a,
+  .more-link a,
+  .empty-card a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  .primary-button {
+    color: #fff;
+    background: var(--accent);
+    box-shadow: 0 12px 24px rgba(14, 165, 233, 0.22);
+  }
+
+  .secondary-button,
+  .card-actions a,
+  .notice-links a,
+  .side-links a,
+  .more-link a,
+  .empty-card a {
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+  }
+
+  .primary-button:hover,
+  .secondary-button:hover,
+  .card-actions a:hover,
+  .notice-links a:hover,
+  .side-links a:hover,
+  .more-link a:hover,
+  .empty-card a:hover {
+    transform: translateY(-1px);
+  }
+
+  .hero-side {
+    background: linear-gradient(180deg, var(--accent-soft), #fff);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .side-title {
+    color: var(--text);
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+
+  .hero-side ul {
+    margin: 0;
+    padding-left: 1.2em;
+    color: var(--sub);
+    line-height: 1.8;
+  }
+
+  .content-section {
+    padding: 24px 0 64px;
+  }
+
+  .two-column-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .main-column,
+  .side-column {
+    display: grid;
+    gap: 24px;
+  }
+
+  .info-card,
+  .side-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+    padding: 28px;
+  }
+
+  .section-heading {
+    margin-bottom: 22px;
+  }
+
+  .section-heading h2,
+  .side-card h2 {
+    color: var(--text);
+    font-size: 1.45rem;
+    margin-bottom: 8px;
+  }
+
+  .section-heading p,
+  .notice-card p,
+  .empty-card p,
+  .area-card p,
+  .spot-description,
+  .spot-meta {
+    color: var(--sub);
+    line-height: 1.8;
+  }
+
+  .spot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .spot-card,
+  .area-card,
+  .empty-card {
+    border: 1px solid var(--border-soft);
+    background: var(--card-subtle);
+    border-radius: 20px;
+    padding: 18px;
+  }
+
+  .spot-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .spot-area,
+  .area-count {
+    color: var(--accent-dark);
+    font-size: 0.82rem;
+    font-weight: 800;
+    margin-bottom: 0;
+  }
+
+  .official-badge {
+    flex: 0 0 auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--sub);
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 0.74rem;
+    font-weight: 800;
+  }
+
+  .spot-card h3,
+  .area-card h3 {
+    margin-bottom: 10px;
+  }
+
+  .spot-card h3 a,
+  .area-card h3 a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .spot-card h3 a:hover,
+  .area-card h3 a:hover {
+    color: var(--accent-dark);
+  }
+
+  .spot-description {
+    font-size: 0.94rem;
+    margin-bottom: 12px;
+  }
+
+  .spot-meta {
+    display: grid;
+    gap: 4px;
+    font-size: 0.84rem;
+    margin-bottom: 12px;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .tag-list span {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--sub);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .area-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .area-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .more-link {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .notice-card {
+    background: linear-gradient(180deg, #fff, var(--card-subtle));
+  }
+
+
+  .side-card dl {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+  }
+
+  .side-card dl div {
+    display: grid;
+    gap: 4px;
+    border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 12px;
+  }
+
+  .side-card dl div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .side-card dt {
+    color: var(--sub);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .side-card dd {
+    color: var(--text);
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .side-tags {
+    margin-bottom: 0;
+  }
+
+  .side-links {
+    flex-direction: column;
+  }
+
+  .side-links a {
+    width: 100%;
+  }
+
+  @media (max-width: 920px) {
+    .hero-card,
+    .two-column-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .meta-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .side-card {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-section {
+      padding-top: 24px;
+    }
+
+    .hero-card,
+    .info-card,
+    .side-card {
+      padding: 22px;
+    }
+
+    .meta-list,
+    .spot-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .area-card {
+      display: grid;
+    }
+
+    .hero-actions a,
+    .card-actions a,
+    .notice-links a {
+      width: 100%;
+    }
+  }
+</style>
