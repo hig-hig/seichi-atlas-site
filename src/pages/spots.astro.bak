@@ -3,8 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { spots, works } from "../data/portalData.js";
 
 const title = "スポットから探す | Seichi Atlas";
-const description =
-  "Seichi Atlasの聖地スポット一覧ページです。アニメや漫画の聖地巡礼スポットを、作品・地域・タグから探せます。";
+const description = "Seichi Atlasの聖地スポット一覧ページです。アニメや漫画の聖地巡礼スポットを、作品・地域・タグから探せます。";
 
 function normalizeTags(tags) {
   if (Array.isArray(tags)) {
@@ -13,7 +12,7 @@ function normalizeTags(tags) {
 
   if (typeof tags === "string") {
     return tags
-      .split(/[、,\n|/／]+/)
+      .split(",")
       .map((tag) => tag.trim())
       .filter(Boolean);
   }
@@ -57,7 +56,6 @@ const normalizedSpots = spots.map((spot, index) => {
     slug: spot.slug || "",
     work: spot.work || spot.workTitle || work?.title || "",
     workSlug: spot.workSlug || work?.slug || "",
-    areaSlug: spot.areaSlug || "",
     prefecture: spot.prefecture || "",
     station: spot.station || "",
     officialLevel,
@@ -100,6 +98,7 @@ const totalPrefectures = prefectureOptions.length;
 
 <BaseLayout title={title} description={description} canonical="/spots/">
   <main class="spots-page">
+
     <section class="spots-hero reveal-item">
       <div>
         <div class="section-kicker">SPOTS</div>
@@ -229,8 +228,6 @@ const totalPrefectures = prefectureOptions.length;
             style={`--card-delay:${index * 36}ms;`}
             data-name={spot.name}
             data-work={spot.work}
-            data-work-slug={spot.workSlug}
-            data-area-slug={spot.areaSlug}
             data-prefecture={spot.prefecture}
             data-station={spot.station}
             data-official={spot.officialLevel}
@@ -262,13 +259,11 @@ const totalPrefectures = prefectureOptions.length;
                 </p>
               )}
 
-              {spot.tags.length > 0 && (
-                <div class="spot-tags">
-                  {spot.tags.slice(0, 5).map((tag) => (
-                    <span>#{tag}</span>
-                  ))}
-                </div>
-              )}
+              <div class="spot-tags">
+                {spot.tags.slice(0, 5).map((tag) => (
+                  <span>#{tag}</span>
+                ))}
+              </div>
 
               <div class="spot-actions">
                 <a
@@ -280,7 +275,7 @@ const totalPrefectures = prefectureOptions.length;
 
                 <a
                   class="spot-button"
-                  href={spot.slug ? `/map/?spot=${spot.slug}` : "/map/"}
+                  href={`/map/?spot=${spot.slug || spot.id}`}
                 >
                   地図で見る
                 </a>
@@ -305,6 +300,7 @@ const totalPrefectures = prefectureOptions.length;
         <p>検索条件を変更するか、条件をリセットしてください。</p>
       </div>
     </section>
+
   </main>
 
   <style is:global>
@@ -451,7 +447,6 @@ const totalPrefectures = prefectureOptions.length;
       justify-content: center;
       background: var(--accent-soft);
       color: var(--accent-dark);
-      text-decoration: none;
     }
 
     .filter-reset-button:hover,
@@ -756,7 +751,6 @@ const totalPrefectures = prefectureOptions.length;
       color: var(--text);
       font-size: 12px;
       font-weight: 900;
-      text-decoration: none;
       cursor: pointer;
       transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
     }
@@ -999,7 +993,7 @@ const totalPrefectures = prefectureOptions.length;
     }
   </style>
 
-  <script is:inline>
+  <script>
     const searchInput = document.getElementById("spot-search");
     const workFilter = document.getElementById("work-filter");
     const prefectureFilter = document.getElementById("prefecture-filter");
@@ -1012,15 +1006,7 @@ const totalPrefectures = prefectureOptions.length;
     const emptyResult = document.getElementById("empty-result");
     const grid = document.getElementById("spots-grid");
 
-    const urlParams = new URLSearchParams(window.location.search);
-
-    const initialWorkSlug = urlParams.get("work") || "";
-    const initialAreaSlug = urlParams.get("area") || "";
-    const initialTag = urlParams.get("tag") || "";
-    const initialPrefecture = urlParams.get("prefecture") || "";
-
     let activeTag = "all";
-    let activeAreaSlug = initialAreaSlug;
 
     function normalizeText(value) {
       return String(value || "").toLowerCase();
@@ -1091,10 +1077,6 @@ const totalPrefectures = prefectureOptions.length;
         labels.push("作品: " + work);
       }
 
-      if (activeAreaSlug) {
-        labels.push("地域: " + activeAreaSlug);
-      }
-
       if (prefecture !== "all") {
         labels.push(prefecture);
       }
@@ -1124,46 +1106,8 @@ const totalPrefectures = prefectureOptions.length;
       summary.className = "filter-summary";
       summary.innerHTML =
         '<span class="summary-label">絞り込み中</span>' +
-        labels
-          .map((label) => '<span class="summary-pill">' + escapeHtml(label) + '</span>')
-          .join("") +
-        '<span class="summary-pill">' + count + "件表示</span>";
-    }
-
-    function applyInitialUrlParams() {
-      if (initialWorkSlug && workFilter) {
-        const targetCard = cards.find((card) => {
-          return card.dataset.workSlug === initialWorkSlug;
-        });
-
-        if (targetCard?.dataset.work) {
-          workFilter.value = targetCard.dataset.work;
-        }
-      }
-
-      if (initialPrefecture && prefectureFilter) {
-        const hasPrefectureOption = Array.from(prefectureFilter.options).some((option) => {
-          return option.value === initialPrefecture;
-        });
-
-        if (hasPrefectureOption) {
-          prefectureFilter.value = initialPrefecture;
-        }
-      }
-
-      if (initialTag) {
-        activeTag = initialTag;
-
-        tagButtons.forEach((button) => {
-          if (button.dataset.tag === activeTag) {
-            button.classList.add("active");
-          } else {
-            button.classList.remove("active");
-          }
-        });
-      }
-
-      applyFilters();
+        labels.map((label) => '<span class="summary-pill">' + escapeHtml(label) + '</span>').join("") +
+        '<span class="summary-pill">' + count + '件表示</span>';
     }
 
     function applyFilters() {
@@ -1177,8 +1121,6 @@ const totalPrefectures = prefectureOptions.length;
       cards.forEach((card) => {
         const name = normalizeText(card.dataset.name);
         const cardWork = String(card.dataset.work || "");
-        const cardWorkSlug = String(card.dataset.workSlug || "");
-        const cardAreaSlug = String(card.dataset.areaSlug || "");
         const cardPrefecture = String(card.dataset.prefecture || "");
         const station = normalizeText(card.dataset.station);
         const cardOfficial = String(card.dataset.official || "");
@@ -1190,8 +1132,6 @@ const totalPrefectures = prefectureOptions.length;
         const keywordTarget = normalizeText([
           name,
           cardWork,
-          cardWorkSlug,
-          cardAreaSlug,
           cardPrefecture,
           station,
           tags,
@@ -1202,7 +1142,6 @@ const totalPrefectures = prefectureOptions.length;
 
         const keywordMatch = !keyword || keywordTarget.includes(keyword);
         const workMatch = work === "all" || cardWork === work;
-        const areaMatch = !activeAreaSlug || cardAreaSlug === activeAreaSlug;
         const prefectureMatch = prefecture === "all" || cardPrefecture === prefecture;
         const officialMatch = official === "all" || cardOfficial === official;
         const tagMatch = activeTag === "all" || tags.split(",").includes(activeTag);
@@ -1210,7 +1149,6 @@ const totalPrefectures = prefectureOptions.length;
         const isVisible =
           keywordMatch &&
           workMatch &&
-          areaMatch &&
           prefectureMatch &&
           officialMatch &&
           tagMatch;
@@ -1252,7 +1190,6 @@ const totalPrefectures = prefectureOptions.length;
       }
 
       activeTag = "all";
-      activeAreaSlug = "";
 
       tagButtons.forEach((button) => {
         if (button.dataset.tag === "all") {
@@ -1290,7 +1227,5 @@ const totalPrefectures = prefectureOptions.length;
         applyFilters();
       });
     });
-
-    applyInitialUrlParams();
   </script>
 </BaseLayout>
