@@ -1,100 +1,125 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const title = "アプリを開く | Seichi Atlas";
-const description = "Seichi Atlas / 聖地ポータルのアプリ本体を開くページです。利用前に、非公式サービスであることや聖地巡礼時の注意事項をご確認ください。";
-
-// TODO: GAS WebアプリのURLが決まったら差し替える
-const appUrl = "https://script.google.com/macros/s/AKfycbxc66Y7igtYCNRGlFNbaBoAizFcn3BCKuZb2cbyOqtUvmOAk3QipELJ-YB2ylzafkdRmQ/exec";
+const title = "記録アプリ準備中 | Seichi Atlas";
+const description = "Seichi Atlasの記録アプリ機能は現在準備中です。現在は作品・スポット・マップから探す公開版ポータルをご利用ください。";
 ---
 
-<BaseLayout title={title} description={description} canonical="/app">
-  <main class="page">
-    <section class="app-hero">
-      <p class="kicker">Open App</p>
+<BaseLayout title={title} description={description} canonical="/app/">
+  <main class="app-coming-soon-page">
 
-      <h1>Seichi Atlasを開く</h1>
+    <section class="coming-soon-card reveal-item">
+      <div class="status-badge">準備中</div>
 
-      <p class="app-lead">
-        Seichi Atlasは、アニメ・漫画等の聖地巡礼を地図と訪問記録で管理できる非公式ツールです。
-        利用前に、以下の注意事項をご確認ください。
+      <h1>記録アプリは現在準備中です</h1>
+
+      <p>
+        訪問記録やユーザー別保存機能は、まだ正式公開していません。
+        現在は、作品・スポット・マップから聖地巡礼スポットを探す公開版ポータルをご利用ください。
       </p>
 
-      <div class="app-card">
-        <h2>利用前の確認</h2>
+      <div class="action-row">
+        <a class="button-primary" href="/map/">
+          マップから探す
+        </a>
 
-        <ul>
-          <li>本サービスは各作品・権利者・自治体・施設等とは関係のない非公式サービスです。</li>
-          <li>掲載情報の正確性、最新性、立入可否、撮影可否を保証するものではありません。</li>
-          <li>聖地を訪問する際は、現地のルール、施設の案内、近隣住民への配慮を必ず守ってください。</li>
-          <li>私有地や立入禁止区域への侵入、迷惑行為は禁止です。</li>
-          <li>ユーザー別管理を利用する場合、訪問記録等がユーザーごとに保存される場合があります。</li>
-        </ul>
-
-        <div class="app-actions">
-          <a class="button-primary" href={appUrl} target="_blank" rel="noopener noreferrer">
-            アプリ本体を開く
-          </a>
-
-          <a class="button-secondary" href="/terms">
-            利用規約を確認する
-          </a>
-        </div>
-
-        <p class="app-note">
-          ※ 現在、アプリ本体URLは公開準備中です。GAS WebアプリのURLが決まり次第、このボタンに接続します。
-        </p>
+        <a class="button-secondary" href="/">
+          HOMEへ戻る
+        </a>
       </div>
     </section>
+
   </main>
 
   <style>
-    .app-hero {
-      max-width: 860px;
+    .app-coming-soon-page {
+      width: calc(100% - 32px);
+      max-width: 880px;
+      min-height: 62vh;
       margin: 0 auto;
-      padding: 40px 0 20px;
+      padding: 72px 0 88px;
+      display: grid;
+      place-items: center;
     }
 
-    .app-lead {
-      color: var(--sub);
-      font-size: 17px;
-      max-width: 720px;
-    }
-
-    .app-card {
-      margin-top: 32px;
-      padding: 32px;
-      border-radius: 28px;
-      background: #ffffff;
+    .coming-soon-card {
+      width: 100%;
+      padding: 42px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border-soft);
       box-shadow: var(--shadow);
+      text-align: center;
     }
 
-    .app-card h2 {
-      border: none;
-      margin-top: 0;
-      padding-bottom: 0;
+    .status-badge {
+      width: fit-content;
+      margin: 0 auto 18px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
     }
 
-    .app-card ul {
-      padding-left: 1.4em;
+    .coming-soon-card h1 {
+      margin: 0 0 14px;
+      color: var(--text);
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.16;
+      letter-spacing: -0.05em;
+    }
+
+    .coming-soon-card p {
+      max-width: 640px;
+      margin: 0 auto;
       color: var(--sub);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.9;
     }
 
-    .app-card li {
-      margin: 8px 0;
-    }
-
-    .app-actions {
+    .action-row {
       display: flex;
-      gap: 14px;
+      justify-content: center;
       flex-wrap: wrap;
+      gap: 10px;
       margin-top: 28px;
     }
 
-    .app-note {
-      margin-top: 18px;
-      color: var(--sub);
-      font-size: 13px;
+    .reveal-item {
+      opacity: 0;
+      animation: contentFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes contentFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-coming-soon-page {
+        width: calc(100% - 24px);
+        padding: 48px 0 64px;
+      }
+
+      .coming-soon-card {
+        padding: 28px 20px;
+      }
+
+      .action-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </BaseLayout>

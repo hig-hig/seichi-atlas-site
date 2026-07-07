@@ -1,26 +1,38 @@
 ---
+const currentPath = Astro.url.pathname;
+
 const navItems = [
-  { href: "/", label: "トップ" },
-  { href: "/about", label: "Seichi Atlasとは" },
-  { href: "/pilgrimage", label: "聖地巡礼とは" },
-  { href: "/works", label: "作品から探す" },
-  { href: "/areas", label: "地域から探す" },
-  { href: "/spots", label: "スポットから探す" },
-  { href: "/manners", label: "マナー" },
-  { href: "/app", label: "記録アプリ" },
+  { href: "/", label: "HOME" },
+  { href: "/map/", label: "マップから探す" },
+  { href: "/works/", label: "作品から探す" },
+  { href: "/spots/", label: "スポットから探す" },
 ];
+
+function isActive(href) {
+  if (href === "/") {
+    return currentPath === "/";
+  }
+
+  return currentPath.startsWith(href);
+}
 ---
 
 <header class="site-header">
   <div class="site-header-inner">
-    <a href="/" class="site-logo">
+    <a href="/" class="site-logo" aria-label="Seichi Atlas HOME">
       <span class="site-logo-mark">巡</span>
       <span class="site-logo-text">Seichi Atlas</span>
     </a>
 
     <nav class="site-nav" aria-label="メインナビゲーション">
       {navItems.map((item) => (
-        <a href={item.href}>{item.label}</a>
+        <a
+          href={item.href}
+          class={isActive(item.href) ? "active" : ""}
+          aria-current={isActive(item.href) ? "page" : undefined}
+        >
+          {item.label}
+        </a>
       ))}
     </nav>
   </div>

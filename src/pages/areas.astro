@@ -1,249 +1,1087 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { areas } from "../data/portalData.js";
+import { areas, spots, works } from "../data/portalData.js";
 
 const title = "地域から探す | Seichi Atlas";
-const description = "Seichi Atlasの地域別ページです。東京、京都、北海道など、都道府県ごとにアニメや漫画の聖地巡礼スポットを探せます。";
+const description = "Seichi Atlasの地域一覧ページです。アニメや漫画の聖地巡礼スポットを、都道府県やエリアから探せます。";
+
+function normalizeTags(tags) {
+  if (Array.isArray(tags)) {
+    return tags;
+  }
+
+  if (typeof tags === "string") {
+    return tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function getAreaName(area) {
+  return area.name || area.prefecture || area.title || "地域未登録";
+}
+
+const normalizedAreas = areas
+  .filter((area) => area.slug)
+  .map((area) => {
+    const name = getAreaName(area);
+
+    const areaSpots = spots.filter((spot) => {
+      return spot.areaSlug === area.slug || spot.prefecture === name;
+    });
+
+    const relatedWorks = [
+      ...new Set(
+        areaSpots
+          .map((spot) => {
+            const work = works.find((item) => item.slug === spot.workSlug);
+            return spot.work || spot.workTitle || work?.title || "";
+          })
+          .filter(Boolean)
+      ),
+    ];
+
+    const tags = [
+      ...new Set(
+        areaSpots
+          .flatMap((spot) => normalizeTags(spot.tags))
+          .filter(Boolean)
+      ),
+    ];
+
+    return {
+      ...area,
+      name,
+      spotCount: areaSpots.length,
+      workCount: relatedWorks.length,
+      relatedWorks,
+      tags,
+      descriptionText:
+        area.description ||
+        `${name}に関連するアニメ・漫画等の聖地巡礼スポットを確認できます。`,
+    };
+  });
+
+const totalAreas = normalizedAreas.length;
+const totalSpots = spots.length;
+const totalWorks = works.length;
+
+const tagOptions = [
+  ...new Set(
+    normalizedAreas
+      .flatMap((area) => area.tags)
+      .filter(Boolean)
+  ),
+];
 ---
 
-<BaseLayout title={title} description={description} canonical="/areas">
-  <main class="page">
-    <section class="content-hero">
-      <p class="kicker">Areas</p>
+<BaseLayout title={title} description={description} canonical="/areas/">
+  <main class="areas-page">
 
-      <h1>地域から聖地を探す</h1>
-
-      <p class="lead">
-        都道府県やエリアを起点に、アニメ・漫画等の聖地巡礼スポットを探せます。
-        旅行先や近くの地域から、気になる聖地を見つけましょう。
-      </p>
-    </section>
-
-    <section class="areas-intro">
+    <section class="areas-hero reveal-item">
       <div>
-        <h2>地域別に巡礼スポットを整理</h2>
+        <div class="section-kicker">AREAS</div>
+
+        <h1>地域から探す</h1>
+
         <p>
-          Seichi Atlasでは、作品別だけでなく地域別にも聖地を探せるポータルを目指しています。
-          今後、Spreadsheetの聖地データをもとに、都道府県別ページを拡張していきます。
+          都道府県やエリアごとに、関連する聖地巡礼スポットを確認できます。
+          地域ページは、作品ページ・スポットページ・マップページへの回遊用ページです。
         </p>
       </div>
 
-      <a class="button-primary" href="/works">作品から探す</a>
+      <div class="areas-hero-stats">
+        <div class="stat-card">
+          <span>地域</span>
+          <strong class="count-up" data-count={totalAreas}>0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>スポット</span>
+          <strong class="count-up" data-count={totalSpots}>0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>作品</span>
+          <strong class="count-up" data-count={totalWorks}>0</strong>
+        </div>
+      </div>
     </section>
 
-    <section class="section">
-      <p class="kicker">List</p>
-      <h2>地域一覧</h2>
+    <section class="areas-filter-card reveal-item">
+      <div class="filter-head">
+        <div>
+          <div class="section-kicker">FILTER</div>
+          <h2>地域を絞り込む</h2>
+        </div>
 
-      <div class="area-grid">
-        {areas.map((area) => (
-          <article class="area-card">
-            <div class="area-card-head">
+        <button class="filter-reset-button" type="button" id="filter-reset">
+          条件をリセット
+        </button>
+      </div>
+
+      <div class="filter-grid">
+        <label class="filter-field search-field">
+          <span>キーワード</span>
+          <input
+            id="area-search"
+            class="filter-input"
+            type="search"
+            placeholder="地域名・作品名・タグで検索"
+            autocomplete="off"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>スポット数</span>
+          <select id="spot-count-filter" class="filter-select">
+            <option value="all">すべて</option>
+            <option value="has-spots">登録あり</option>
+            <option value="no-spots">未登録</option>
+          </select>
+        </label>
+      </div>
+
+      {tagOptions.length > 0 && (
+        <div class="tag-filter-section">
+          <div class="tag-filter-head">
+            <span>タグ</span>
+            <small>地域内スポットのタグで絞り込みます</small>
+          </div>
+
+          <div class="tag-filter-list">
+            <button class="tag-filter-chip active" type="button" data-tag="all">
+              #すべて
+            </button>
+
+            {tagOptions.map((tag) => (
+              <button class="tag-filter-chip" type="button" data-tag={tag}>
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+
+    <section class="areas-main reveal-item">
+      <div class="section-header">
+        <div>
+          <div class="section-kicker">LIST</div>
+          <h2>地域一覧</h2>
+          <p id="result-count">{normalizedAreas.length}件の地域を表示中</p>
+        </div>
+
+        <a class="section-link" href="/map/">地図で探す</a>
+      </div>
+
+      <div id="filter-summary" class="filter-summary muted">
+        すべての地域を表示中
+      </div>
+
+      <div class="areas-grid" id="areas-grid">
+        {normalizedAreas.map((area, index) => (
+          <a
+            class="area-card"
+            href={`/areas/${area.slug}/`}
+            style={`--card-delay:${index * 42}ms;`}
+            data-name={area.name}
+            data-works={area.relatedWorks.join(",")}
+            data-tags={area.tags.join(",")}
+            data-count={area.spotCount}
+            data-description={area.descriptionText}
+          >
+            <div class="area-card-top">
               <div>
+                <div class="area-label">AREA</div>
                 <h3>{area.name}</h3>
-                <p class="area-meta">
-                  {area.works} works / {area.spots} spots
-                </p>
               </div>
 
-              <div class="area-icon">🗾</div>
+              <div class={`status-pill ${area.spotCount > 0 ? "active" : "empty"}`}>
+                {area.spotCount > 0 ? "公開中" : "未登録"}
+              </div>
             </div>
 
             <p class="area-description">
-              {area.description}
+              {area.descriptionText}
             </p>
 
-            <div class="tag-list">
-              {area.tags.map((tag) => (
-                <span>{tag}</span>
-              ))}
+            <div class="area-meta">
+              <span>{area.spotCount}スポット</span>
+              <span>{area.workCount}作品</span>
             </div>
 
-            <div class="area-actions">
-              <a class="text-link" href={`/areas/${area.slug}`}>
-                地域ページを見る
-              </a>
-              <a class="text-link muted" href="/app">
-                地図で探す
-              </a>
+            {area.relatedWorks.length > 0 && (
+              <div class="related-work-list">
+                {area.relatedWorks.slice(0, 4).map((workName) => (
+                  <span>{workName}</span>
+                ))}
+              </div>
+            )}
+
+            <div class="area-card-foot">
+              <span>
+                {area.tags.length > 0 ? `#${area.tags.slice(0, 2).join(" #")}` : "タグ未登録"}
+              </span>
+
+              <span class="card-link">
+                地域詳細へ
+                <span class="arrow">→</span>
+              </span>
             </div>
-          </article>
+          </a>
         ))}
       </div>
-    </section>
 
-    <section class="notice-section">
-      <div>
-        <p class="kicker">Data</p>
-        <h2>地域データを共通ファイルから読み込んでいます</h2>
-        <p>
-          この地域一覧は、共通データファイルから表示しています。
-          今後はSpreadsheetのLocationデータをもとに、都道府県別ページを自動生成していく予定です。
-        </p>
+      <div class="empty-result-card" id="empty-result" hidden>
+        <div class="empty-icon">🗾</div>
+        <h3>表示できる地域がありません</h3>
+        <p>検索条件を変更するか、条件をリセットしてください。</p>
       </div>
-
-      <a class="button-secondary" href="/manners">マナーを見る</a>
     </section>
+
   </main>
 
-  <style>
-    .content-hero {
-      max-width: 840px;
-      padding: 40px 0 16px;
+  <style is:global>
+    .areas-page {
+      width: calc(100% - 32px);
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 44px 0 72px;
     }
 
-    .lead {
-      color: var(--sub);
-      font-size: 17px;
-      max-width: 760px;
+    .section-kicker {
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
-    .areas-intro {
-      margin-top: 36px;
-      padding: 32px;
-      border-radius: 28px;
-      background: #ffffff;
+    .areas-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 22px;
+      padding: 30px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border-soft);
       box-shadow: var(--shadow);
+    }
+
+    .areas-hero h1 {
+      margin: 8px 0 12px;
+      color: var(--text);
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.12;
+      letter-spacing: -0.05em;
+    }
+
+    .areas-hero p {
+      max-width: 720px;
+      margin: 0;
+      color: var(--sub);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.8;
+    }
+
+    .areas-hero-stats {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 20px;
+      border-radius: 22px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .stat-card span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .stat-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 36px;
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .areas-filter-card,
+    .areas-main {
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .areas-filter-card {
+      margin-bottom: 18px;
+      padding: 22px;
+    }
+
+    .filter-head,
+    .section-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 28px;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
     }
 
-    .areas-intro h2 {
+    .filter-head h2,
+    .section-header h2 {
+      margin: 4px 0 0;
+      padding: 0;
       border: none;
-      margin-top: 0;
-      padding-bottom: 0;
+      color: var(--text);
+      font-size: 24px;
+      letter-spacing: -0.03em;
     }
 
-    .areas-intro p {
+    .section-header p {
+      margin: 6px 0 0;
       color: var(--sub);
-      max-width: 680px;
+      font-size: 13px;
+      font-weight: 750;
     }
 
-    .section {
-      margin-top: 72px;
+    .filter-reset-button,
+    .section-link {
+      min-height: 40px;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
     }
 
-    .section > h2,
-    .notice-section h2 {
-      border: none;
-      margin-top: 0;
-      padding-bottom: 0;
-      font-size: clamp(28px, 4vw, 40px);
+    .filter-reset-button {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--sub);
     }
 
-    .area-grid {
+    .section-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .filter-reset-button:hover,
+    .section-link:hover {
+      transform: translateY(-1px);
+      background: var(--card-subtle);
+      color: var(--text);
+    }
+
+    .filter-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 28px;
+      grid-template-columns: minmax(0, 1.5fr) minmax(180px, 0.5fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .filter-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .filter-field span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+    }
+
+    .filter-input,
+    .filter-select {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
+    }
+
+    .tag-filter-section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .tag-filter-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tag-filter-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .tag-filter-head small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .tag-filter-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-filter-chip {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .tag-filter-chip:hover {
+      transform: translateY(-1px);
+      background: #e8eef6;
+      color: var(--text);
+    }
+
+    .tag-filter-chip.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.22);
+      animation: chipPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .areas-main {
+      padding: 22px;
+    }
+
+    .filter-summary {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .filter-summary.muted {
+      color: var(--muted);
+    }
+
+    .summary-label {
+      color: var(--accent-dark);
+      font-weight: 950;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .areas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .areas-grid.filter-refreshing .area-card:not([hidden]) {
+      animation: filterResultFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .area-card {
-      background: #ffffff;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
+      min-height: 280px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      padding: 22px;
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+      opacity: 0;
+      animation: cardIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--card-delay);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
-    .area-card-head {
+    .area-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-strong);
+      border-color: var(--accent-soft);
+    }
+
+    .area-card-top {
       display: flex;
-      align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .area-label {
+      margin-bottom: 6px;
+      color: var(--accent-dark);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
     }
 
     .area-card h3 {
       margin: 0;
+      color: var(--text);
       font-size: 24px;
+      font-weight: 950;
+      line-height: 1.35;
+      letter-spacing: -0.03em;
     }
 
-    .area-meta {
-      margin: 4px 0 0;
-      color: var(--sub);
-      font-size: 13px;
-    }
-
-    .area-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 18px;
-      display: grid;
-      place-items: center;
-      background: #f7f3ee;
-      font-size: 26px;
+    .status-pill {
       flex-shrink: 0;
+      white-space: nowrap;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.03em;
+    }
+
+    .status-pill.active {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .status-pill.empty {
+      background: #eef2f7;
+      color: var(--sub);
     }
 
     .area-description {
+      display: -webkit-box;
+      margin: 16px 0 0;
       color: var(--sub);
-      margin: 0;
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.7;
+      overflow: hidden;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
     }
 
-    .tag-list {
+    .area-meta,
+    .related-work-list {
       display: flex;
-      gap: 8px;
       flex-wrap: wrap;
-      margin-top: auto;
+      gap: 7px;
+      margin-top: 14px;
     }
 
-    .tag-list span {
+    .area-meta span,
+    .related-work-list span {
+      display: inline-flex;
       padding: 6px 10px;
       border-radius: 999px;
-      background: #f7f3ee;
+      background: var(--card-subtle);
       color: var(--sub);
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 750;
     }
 
-    .area-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      padding-top: 4px;
-    }
-
-    .text-link {
+    .related-work-list span {
+      background: var(--accent-soft);
       color: var(--accent-dark);
-      font-weight: 800;
-      text-decoration: underline;
-      text-underline-offset: 3px;
+      font-size: 12px;
+      font-weight: 850;
     }
 
-    .text-link.muted {
-      color: var(--sub);
-    }
-
-    .notice-section {
-      margin-top: 72px;
+    .area-card-foot {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 28px;
-      padding: 32px;
-      border-radius: 28px;
-      background: #fffaf7;
-      border: 1px solid var(--accent);
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 18px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 800;
     }
 
-    .notice-section p {
+    .card-link {
+      color: var(--accent);
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .arrow {
+      display: inline-flex;
+      transition: transform 0.18s ease;
+    }
+
+    .area-card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .empty-result-card {
+      margin-top: 18px;
+      padding: 42px 28px;
+      border-radius: var(--radius-large);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      text-align: center;
+      animation: emptyStateIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .empty-icon {
+      margin-bottom: 12px;
+      font-size: 34px;
+      animation: emptyIconFloat 1.8s ease-in-out infinite;
+    }
+
+    .empty-result-card h3 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 22px;
+    }
+
+    .empty-result-card p {
+      margin: 0;
       color: var(--sub);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .reveal-item {
+      opacity: 0;
+      animation: contentFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes contentFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes filterResultFadeIn {
+      from {
+        opacity: 0.42;
+        transform: translateY(8px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes chipPop {
+      from {
+        transform: scale(0.94);
+      }
+
+      65% {
+        transform: scale(1.05);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes emptyStateIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes emptyIconFloat {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      35% {
+        transform: translateY(-3px) rotate(-2deg);
+      }
+
+      70% {
+        transform: translateY(1px) rotate(2deg);
+      }
+
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
     }
 
     @media (max-width: 900px) {
-      .area-grid {
+      .areas-hero {
         grid-template-columns: 1fr;
       }
 
-      .areas-intro,
-      .notice-section {
-        align-items: flex-start;
-        flex-direction: column;
+      .areas-hero-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .areas-page {
+        width: calc(100% - 24px);
+        padding: 26px 0 52px;
+      }
+
+      .areas-hero {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .areas-hero h1 {
+        font-size: 34px;
+      }
+
+      .stat-card {
+        padding: 14px 10px;
+      }
+
+      .stat-card strong {
+        font-size: 26px;
+      }
+
+      .filter-head,
+      .section-header {
+        display: block;
+      }
+
+      .filter-reset-button,
+      .section-link {
+        width: 100%;
+        margin-top: 12px;
+      }
+
+      .tag-filter-list {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tag-filter-chip {
+        flex: 0 0 auto;
+      }
+
+      .areas-main {
+        padding: 18px;
+      }
+
+      .areas-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .area-card {
+        min-height: auto;
+      }
+
+      .area-card-top {
+        display: block;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        margin-top: 12px;
+      }
+
+      .area-card-foot {
+        display: block;
+      }
+
+      .card-link {
+        display: inline-flex;
+        margin-top: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
+
+  <script>
+    const searchInput = document.getElementById("area-search");
+    const countFilter = document.getElementById("spot-count-filter");
+    const resetButton = document.getElementById("filter-reset");
+    const tagButtons = Array.from(document.querySelectorAll("[data-tag]"));
+    const cards = Array.from(document.querySelectorAll(".area-card"));
+    const resultCount = document.getElementById("result-count");
+    const summary = document.getElementById("filter-summary");
+    const emptyResult = document.getElementById("empty-result");
+    const grid = document.getElementById("areas-grid");
+
+    let activeTag = "all";
+
+    function normalizeText(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function animateCountUp(element, target, duration) {
+      const endValue = Number(target || 0);
+      const startTime = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(endValue * eased);
+
+        element.textContent = String(value);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.textContent = String(endValue);
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function triggerFilterMotion() {
+      if (!grid) return;
+
+      grid.classList.remove("filter-refreshing");
+      void grid.offsetWidth;
+      grid.classList.add("filter-refreshing");
+
+      setTimeout(() => {
+        grid.classList.remove("filter-refreshing");
+      }, 300);
+    }
+
+    function renderSummary(count) {
+      if (!summary) return;
+
+      const labels = [];
+      const keyword = searchInput ? searchInput.value.trim() : "";
+      const countValue = countFilter?.value || "all";
+
+      if (keyword) {
+        labels.push("検索: " + keyword);
+      }
+
+      if (countValue === "has-spots") {
+        labels.push("登録あり");
+      }
+
+      if (countValue === "no-spots") {
+        labels.push("未登録");
+      }
+
+      if (activeTag !== "all") {
+        labels.push("#" + activeTag);
+      }
+
+      if (!labels.length) {
+        summary.className = "filter-summary muted";
+        summary.textContent = "すべての地域を表示中";
+        return;
+      }
+
+      summary.className = "filter-summary";
+      summary.innerHTML =
+        '<span class="summary-label">絞り込み中</span>' +
+        labels.map((label) => '<span class="summary-pill">' + escapeHtml(label) + '</span>').join("") +
+        '<span class="summary-pill">' + count + '件表示</span>';
+    }
+
+    function applyFilters() {
+      const keyword = normalizeText(searchInput?.value);
+      const countValue = countFilter?.value || "all";
+
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const name = normalizeText(card.dataset.name);
+        const works = normalizeText(card.dataset.works);
+        const tags = String(card.dataset.tags || "");
+        const description = normalizeText(card.dataset.description);
+        const spotCount = Number(card.dataset.count || 0);
+
+        const keywordTarget = normalizeText([
+          name,
+          works,
+          tags,
+          description,
+        ].join(" "));
+
+        const keywordMatch = !keyword || keywordTarget.includes(keyword);
+        const tagMatch = activeTag === "all" || tags.split(",").includes(activeTag);
+
+        let countMatch = true;
+
+        if (countValue === "has-spots") {
+          countMatch = spotCount > 0;
+        }
+
+        if (countValue === "no-spots") {
+          countMatch = spotCount === 0;
+        }
+
+        const isVisible = keywordMatch && tagMatch && countMatch;
+
+        card.hidden = !isVisible;
+
+        if (isVisible) {
+          visibleCount += 1;
+        }
+      });
+
+      if (resultCount) {
+        resultCount.textContent = visibleCount + "件の地域を表示中";
+      }
+
+      if (emptyResult) {
+        emptyResult.hidden = visibleCount !== 0;
+      }
+
+      renderSummary(visibleCount);
+      triggerFilterMotion();
+    }
+
+    function resetFilters() {
+      if (searchInput) {
+        searchInput.value = "";
+      }
+
+      if (countFilter) {
+        countFilter.value = "all";
+      }
+
+      activeTag = "all";
+
+      tagButtons.forEach((button) => {
+        if (button.dataset.tag === "all") {
+          button.classList.add("active");
+        } else {
+          button.classList.remove("active");
+        }
+      });
+
+      applyFilters();
+    }
+
+    document.querySelectorAll(".count-up").forEach((element) => {
+      animateCountUp(element, Number(element.dataset.count || 0), 720);
+    });
+
+    searchInput?.addEventListener("input", applyFilters);
+    countFilter?.addEventListener("change", applyFilters);
+    resetButton?.addEventListener("click", resetFilters);
+
+    tagButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeTag = button.dataset.tag || "all";
+
+        tagButtons.forEach((item) => {
+          if (item.dataset.tag === activeTag) {
+            item.classList.add("active");
+          } else {
+            item.classList.remove("active");
+          }
+        });
+
+        applyFilters();
+      });
+    });
+  </script>
 </BaseLayout>

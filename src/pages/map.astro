@@ -1,0 +1,1999 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { spots, works } from "../data/portalData.js";
+
+const title = "マップから探す | Seichi Atlas";
+const description = "Seichi Atlasの聖地マップです。アニメや漫画の聖地巡礼スポットを作品・地域・地図から探せます。";
+
+function normalizeTags(tags) {
+  if (Array.isArray(tags)) {
+    return tags;
+  }
+
+  if (typeof tags === "string") {
+    return tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function normalizeOfficialLevel(level) {
+  if (level === "official") {
+    return "official";
+  }
+
+  if (level === "tourism") {
+    return "tourism";
+  }
+
+  return "fan";
+}
+
+function officialLabel(level) {
+  if (level === "official") {
+    return "公式";
+  }
+
+  if (level === "tourism") {
+    return "観光協会・自治体";
+  }
+
+  return "ファン考察";
+}
+
+const mapSpots = spots
+  .map((spot, index) => {
+    const work = works.find((item) => item.slug === spot.workSlug);
+    const lat = Number(spot.lat);
+    const lng = Number(spot.lng);
+    const officialLevel = normalizeOfficialLevel(spot.officialLevel);
+    const tags = normalizeTags(spot.tags);
+
+    return {
+      id: String(spot.id || index + 1),
+      name: spot.name || "名称未登録",
+      slug: spot.slug || "",
+      work: spot.work || spot.workTitle || work?.title || "",
+      workSlug: spot.workSlug || work?.slug || "",
+      prefecture: spot.prefecture || "",
+      station: spot.station || "",
+      lat,
+      lng,
+      officialLevel,
+      officialLabel: officialLabel(officialLevel),
+      description: spot.description || "",
+      access: spot.access || spot.address || "",
+      note: spot.note || "",
+      tags,
+    };
+  })
+  .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng));
+
+const workOptions = [
+  ...new Set(
+    mapSpots
+      .map((spot) => spot.work)
+      .filter(Boolean)
+  ),
+];
+
+const prefectureOptions = [
+  ...new Set(
+    mapSpots
+      .map((spot) => spot.prefecture)
+      .filter(Boolean)
+  ),
+];
+
+const tagOptions = [
+  ...new Set(
+    mapSpots
+      .flatMap((spot) => spot.tags)
+      .filter(Boolean)
+  ),
+];
+
+const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
+---
+
+<BaseLayout title={title} description={description} canonical="/map/">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <main class="map-page">
+
+    <section class="map-hero reveal-item">
+      <div>
+        <div class="section-kicker">MAP</div>
+
+        <h1>マップから探す</h1>
+
+        <p>
+          作品をまたいで、聖地巡礼スポットを地図上で探せます。
+          ピンやスポットカードを選ぶと、場所の概要や詳細ページを確認できます。
+        </p>
+      </div>
+
+      <div class="map-hero-stats">
+        <div class="map-stat-card">
+          <span>地図表示スポット</span>
+          <strong class="count-up" data-count={mapSpots.length}>0</strong>
+        </div>
+
+        <div class="map-stat-card">
+          <span>作品</span>
+          <strong class="count-up" data-count={workOptions.length}>0</strong>
+        </div>
+
+        <div class="map-stat-card">
+          <span>地域</span>
+          <strong class="count-up" data-count={prefectureOptions.length}>0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="map-filter-card reveal-item">
+      <div class="map-filter-head">
+        <div>
+          <div class="section-kicker">FILTER</div>
+          <h2>条件で絞り込む</h2>
+        </div>
+
+        <button class="filter-reset-button" type="button" id="filter-reset">
+          条件をリセット
+        </button>
+      </div>
+
+      <div class="map-filter-grid">
+        <label class="filter-field">
+          <span>キーワード</span>
+          <input
+            id="map-search"
+            class="filter-input"
+            type="search"
+            placeholder="スポット名・作品名・駅名・都道府県"
+            autocomplete="off"
+          />
+        </label>
+
+        <label class="filter-field">
+          <span>作品</span>
+          <select id="work-filter" class="filter-select">
+            <option value="all">すべて</option>
+            {workOptions.map((workName) => (
+              <option value={workName}>{workName}</option>
+            ))}
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>都道府県</span>
+          <select id="prefecture-filter" class="filter-select">
+            <option value="all">すべて</option>
+            {prefectureOptions.map((prefecture) => (
+              <option value={prefecture}>{prefecture}</option>
+            ))}
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>関連度</span>
+          <select id="official-filter" class="filter-select">
+            <option value="all">すべて</option>
+            <option value="official">公式</option>
+            <option value="tourism">観光協会・自治体</option>
+            <option value="fan">ファン考察</option>
+          </select>
+        </label>
+      </div>
+
+      {tagOptions.length > 0 && (
+        <div class="tag-filter-section">
+          <div class="tag-filter-head">
+            <span>タグ</span>
+            <small>スポットに登録されたタグで絞り込みます</small>
+          </div>
+
+          <div class="tag-filter-list">
+            <button class="tag-filter-chip active" type="button" data-tag="all">
+              #すべて
+            </button>
+
+            {tagOptions.map((tag) => (
+              <button class="tag-filter-chip" type="button" data-tag={tag}>
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+
+    <section class="map-layout reveal-item">
+
+      <div class="map-card">
+        <div class="map-card-head">
+          <div>
+            <div class="section-kicker">EXPLORE</div>
+            <h2>聖地マップ</h2>
+            <p>
+              ピンをクリックするとスポット情報を表示します。
+              右側のカードをクリックすると、その地点へ移動します。
+            </p>
+          </div>
+        </div>
+
+        <div class="map-wrap">
+          <div id="map"></div>
+
+          <div class="map-empty-overlay" id="map-empty-overlay" hidden>
+            <div class="map-empty-box">
+              <h3>表示できるスポットがありません</h3>
+              <p>検索条件を変更するか、条件をリセットしてください。</p>
+              <button type="button" id="empty-reset">条件をリセット</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-summary muted" id="map-summary">
+          すべてのスポットを表示中
+        </div>
+
+        <div class="map-legend">
+          <div class="map-legend-item">
+            <span class="legend-dot official"></span>
+            <span>公式</span>
+          </div>
+
+          <div class="map-legend-item">
+            <span class="legend-dot tourism"></span>
+            <span>観光協会・自治体</span>
+          </div>
+
+          <div class="map-legend-item">
+            <span class="legend-dot fan"></span>
+            <span>ファン考察</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="spot-side-panel">
+        <div class="spot-side-head">
+          <div>
+            <div class="section-kicker">SPOTS</div>
+            <h2>スポット一覧</h2>
+          </div>
+
+          <p id="result-count">
+            {mapSpots.length}件のスポットを表示中
+          </p>
+        </div>
+
+        <div id="spot-list"></div>
+      </aside>
+
+    </section>
+
+    <div id="modal-root"></div>
+
+    <script type="application/json" id="map-data" set:html={mapSpotsJson}></script>
+  </main>
+
+    <style is:global>
+    .map-page {
+      width: calc(100% - 32px);
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 44px 0 72px;
+    }
+
+    .section-kicker {
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .map-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 22px;
+      padding: 30px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .map-hero h1 {
+      margin: 8px 0 12px;
+      color: var(--text);
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.12;
+      letter-spacing: -0.05em;
+    }
+
+    .map-hero p {
+      max-width: 720px;
+      margin: 0;
+      color: var(--sub);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.8;
+    }
+
+    .map-hero-stats {
+      display: grid;
+      gap: 12px;
+    }
+
+    .map-stat-card {
+      padding: 20px;
+      border-radius: 22px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+      transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .map-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .map-stat-card span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .map-stat-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 36px;
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .map-filter-card {
+      margin-bottom: 18px;
+      padding: 22px;
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .map-filter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .map-filter-head h2 {
+      margin: 4px 0 0;
+      padding: 0;
+      border: none;
+      color: var(--text);
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .filter-reset-button {
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #ffffff;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease;
+    }
+
+    .filter-reset-button:hover {
+      transform: translateY(-1px);
+      background: var(--card-subtle);
+      color: var(--text);
+    }
+
+    .map-filter-grid {
+      display: grid;
+      grid-template-columns: 1.5fr repeat(3, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .filter-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .filter-field span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+    }
+
+    .filter-input,
+    .filter-select {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      outline: none;
+      transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
+    }
+
+    .tag-filter-section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .tag-filter-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tag-filter-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .tag-filter-head small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .tag-filter-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-filter-chip {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .tag-filter-chip:hover {
+      transform: translateY(-1px);
+      background: #e8eef6;
+      color: var(--text);
+    }
+
+    .tag-filter-chip.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.22);
+      animation: chipPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .map-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.7fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .map-card,
+    .spot-side-panel {
+      border-radius: var(--radius-large);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .map-card {
+      padding: 20px;
+    }
+
+    .map-card-head {
+      margin-bottom: 16px;
+    }
+
+    .map-card-head h2 {
+      margin: 4px 0 6px;
+      padding: 0;
+      border: none;
+      color: var(--text);
+      font-size: 26px;
+      letter-spacing: -0.03em;
+    }
+
+    .map-card-head p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.7;
+    }
+
+    .map-wrap {
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 620px;
+      min-height: 620px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #eef2f7;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+        0 16px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .map-empty-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 650;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .map-empty-overlay[hidden] {
+      display: none;
+    }
+
+    .map-empty-box {
+      max-width: 360px;
+      padding: 22px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+      text-align: center;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+      animation: emptyStateIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .map-empty-box h3 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    .map-empty-box p {
+      margin: 0 0 14px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.6;
+    }
+
+    .map-empty-box button {
+      min-height: 36px;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .map-summary {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .map-summary.muted {
+      color: var(--muted);
+    }
+
+    .summary-label {
+      color: var(--accent-dark);
+      font-weight: 950;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+    }
+
+    .map-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      display: inline-block;
+      background: #64748b;
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+    }
+
+    .legend-dot.official {
+      background: var(--accent);
+    }
+
+    .legend-dot.tourism {
+      background: var(--visited);
+    }
+
+    .legend-dot.fan {
+      background: var(--sub);
+    }
+
+    .spot-side-panel {
+      position: sticky;
+      top: 90px;
+      max-height: 820px;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .spot-side-head {
+      flex-shrink: 0;
+      margin-bottom: 12px;
+    }
+
+    .spot-side-head h2 {
+      margin: 4px 0 4px;
+      padding: 0;
+      border: none;
+      color: var(--text);
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .spot-side-head p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    #spot-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: grid;
+      gap: 12px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    #spot-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #spot-list::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    .spot-card {
+      border-left: 5px solid var(--sub);
+      border-radius: 20px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-soft);
+      border-right: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      animation: cardIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+    }
+
+    .spot-card.level-official {
+      border-left-color: var(--accent);
+    }
+
+    .spot-card.level-tourism {
+      border-left-color: var(--visited);
+    }
+
+    .spot-card.level-fan {
+      border-left-color: var(--sub);
+    }
+
+    .spot-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .spot-card.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, #ffffff 0%, var(--accent-soft) 100%);
+      box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.16),
+        var(--shadow-strong);
+      animation: activeCard 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .spot-card-main {
+      padding: 18px;
+    }
+
+    .spot-card-title {
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 950;
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+    }
+
+    .spot-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .spot-meta-row span {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .level-pill {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .level-pill.level-official {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .level-pill.level-tourism {
+      background: var(--visited-soft);
+      color: var(--visited-dark);
+    }
+
+    .level-pill.level-fan {
+      background: var(--card-subtle);
+      color: var(--sub);
+    }
+
+    .spot-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .spot-button {
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 12px;
+      background: var(--card-subtle);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+      transition:
+        transform 0.16s ease,
+        background 0.16s ease,
+        color 0.16s ease;
+    }
+
+    .spot-button:hover {
+      transform: translateY(-1px);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .empty-list-card {
+      padding: 34px 22px;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      text-align: center;
+      color: var(--sub);
+    }
+
+    .custom-pin-wrap {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .custom-pin {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--sub);
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+      transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease;
+    }
+
+    .custom-pin.level-official {
+      background: var(--accent);
+    }
+
+    .custom-pin.level-tourism {
+      background: var(--visited);
+    }
+
+    .custom-pin.level-fan {
+      background: var(--sub);
+    }
+
+    .custom-pin.active {
+      transform: scale(1.45);
+      background: var(--accent);
+      box-shadow:
+        0 0 0 5px rgba(14, 165, 233, 0.28),
+        0 0 0 10px rgba(14, 165, 233, 0.10),
+        0 16px 34px rgba(15, 23, 42, 0.34);
+      animation: pinPop 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .leaflet-marker-icon {
+      animation: markerDropIn 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center bottom;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 18px;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+      padding: 2px;
+    }
+
+    .leaflet-popup-content {
+      margin: 14px 16px;
+      min-width: 210px;
+    }
+
+    .popup-title {
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 950;
+      line-height: 1.45;
+    }
+
+    .popup-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .popup-meta span {
+      display: inline-flex;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .popup-level {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .popup-level.level-official {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .popup-level.level-tourism {
+      background: var(--visited-soft);
+      color: var(--visited-dark);
+    }
+
+    .popup-level.level-fan {
+      background: var(--card-subtle);
+      color: var(--sub);
+    }
+
+    .popup-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .popup-button {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 9px;
+      background: var(--card-subtle);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: blur(10px);
+      animation: modalOverlayFadeIn 0.22s ease-out;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 560px;
+      max-height: 86vh;
+      overflow-y: auto;
+      padding: 24px;
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      box-shadow: 0 28px 80px rgba(15, 23, 42, 0.26);
+      animation: modalCardPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 950;
+      line-height: 1.45;
+    }
+
+    .modal-sub {
+      margin: 4px 0 0;
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .modal-close {
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .modal-info {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .modal-info-row {
+      padding: 12px;
+      border-radius: 14px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+    }
+
+    .modal-label {
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .modal-value {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.7;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .reveal-item {
+      opacity: 0;
+      animation: contentFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .reveal-item:nth-of-type(1) {
+      animation-delay: 0.02s;
+    }
+
+    .reveal-item:nth-of-type(2) {
+      animation-delay: 0.08s;
+    }
+
+    .reveal-item:nth-of-type(3) {
+      animation-delay: 0.14s;
+    }
+
+    @keyframes contentFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes activeCard {
+      0% {
+        transform: scale(0.985);
+      }
+
+      55% {
+        transform: scale(1.012);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes chipPop {
+      from {
+        transform: scale(0.94);
+      }
+
+      65% {
+        transform: scale(1.05);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes markerDropIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.72);
+      }
+
+      70% {
+        opacity: 1;
+        transform: translateY(2px) scale(1.08);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes pinPop {
+      0% {
+        transform: scale(0.72);
+      }
+
+      60% {
+        transform: scale(1.24);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes emptyStateIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes modalOverlayFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes modalCardPopIn {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .map-hero,
+      .map-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .map-hero-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .spot-side-panel {
+        position: static;
+        max-height: none;
+      }
+
+      #spot-list {
+        overflow: visible;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .map-page {
+        width: calc(100% - 24px);
+        padding: 26px 0 52px;
+      }
+
+      .map-hero {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .map-hero h1 {
+        font-size: 34px;
+      }
+
+      .map-hero-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .map-stat-card {
+        padding: 14px 10px;
+      }
+
+      .map-stat-card strong {
+        font-size: 26px;
+      }
+
+      .map-filter-head {
+        display: block;
+      }
+
+      .filter-reset-button {
+        width: 100%;
+        margin-top: 12px;
+      }
+
+      .map-filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tag-filter-list {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tag-filter-chip {
+        flex: 0 0 auto;
+      }
+
+      .map-card {
+        padding: 16px;
+        border-radius: 24px;
+      }
+
+      #map {
+        height: 460px;
+        min-height: 420px;
+        border-radius: 20px;
+      }
+
+      .spot-card-actions,
+      .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .spot-button {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script is:inline>
+    const mapDataElement = document.getElementById("map-data");
+    const locations = JSON.parse(mapDataElement?.textContent || "[]");
+
+    const searchInput = document.getElementById("map-search");
+    const workFilter = document.getElementById("work-filter");
+    const prefectureFilter = document.getElementById("prefecture-filter");
+    const officialFilter = document.getElementById("official-filter");
+    const resetButton = document.getElementById("filter-reset");
+    const emptyResetButton = document.getElementById("empty-reset");
+    const tagButtons = Array.from(document.querySelectorAll("[data-tag]"));
+    const spotList = document.getElementById("spot-list");
+    const resultCount = document.getElementById("result-count");
+    const mapSummary = document.getElementById("map-summary");
+    const emptyOverlay = document.getElementById("map-empty-overlay");
+    const modalRoot = document.getElementById("modal-root");
+
+    let mapInstance = null;
+    let markerMap = {};
+    let activeLocationId = null;
+    let activeTag = "all";
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function normalizeText(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function googleMapsUrl(location) {
+      return "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(location.lat + "," + location.lng);
+    }
+
+    function detailUrl(location) {
+      if (!location.slug) {
+        return "/spots/";
+      }
+
+      return "/spots/" + location.slug + "/";
+    }
+
+    function animateCountUp(element, target, duration) {
+      const endValue = Number(target || 0);
+      const startTime = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(endValue * eased);
+
+        element.textContent = String(value);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.textContent = String(endValue);
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function createMarkerIcon(location, isActive) {
+      const level = location.officialLevel || "fan";
+
+      return L.divIcon({
+        className: "",
+        html:
+          '<div class="custom-pin-wrap">' +
+            '<div class="custom-pin level-' + level + (isActive ? " active" : "") + '"></div>' +
+          '</div>',
+        iconSize: isActive ? [30, 30] : [24, 24],
+        iconAnchor: isActive ? [15, 15] : [12, 12],
+        popupAnchor: [0, -14],
+      });
+    }
+
+    function createPopupHtml(location) {
+      const level = location.officialLevel || "fan";
+
+      return `
+        <div class="popup-content">
+          <div class="popup-title">${escapeHtml(location.name)}</div>
+
+          <div class="popup-meta">
+            ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
+            ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
+            ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
+          </div>
+
+          <div class="popup-level level-${escapeHtml(level)}">
+            ${escapeHtml(location.officialLabel)}
+          </div>
+
+          <div class="popup-actions">
+            <button class="popup-button" type="button" onclick="window.openSpotModal('${escapeHtml(location.id)}')">
+              詳細を見る
+            </button>
+
+            <button class="popup-button" type="button" onclick="window.openSpotGoogleMap('${escapeHtml(location.id)}')">
+              Googleマップ
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function initMap() {
+      if (!locations.length) {
+        renderSpotList([]);
+        updateResultCount(0);
+        updateEmptyState(0);
+        return;
+      }
+
+      const firstLocation = locations[0];
+
+      mapInstance = L.map("map", {
+        zoomControl: false,
+        scrollWheelZoom: true,
+        zoomSnap: 1,
+        zoomDelta: 1,
+        doubleClickZoom: false,
+        inertia: true,
+        zoomAnimation: true,
+        fadeAnimation: true,
+        markerZoomAnimation: true,
+      }).setView([firstLocation.lat, firstLocation.lng], 12);
+
+      L.control.zoom({
+        position: "bottomright",
+      }).addTo(mapInstance);
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 20,
+      }).addTo(mapInstance);
+
+      mapInstance.on("click", () => {
+        clearActiveLocation();
+      });
+
+      locations.forEach((location) => {
+        const marker = L.marker([location.lat, location.lng], {
+          icon: createMarkerIcon(location, false),
+        }).addTo(mapInstance);
+
+        marker.bindPopup(createPopupHtml(location));
+
+        marker.on("click", () => {
+          highlightLocation(location.id);
+        });
+
+        markerMap[String(location.id)] = marker;
+      });
+
+      setTimeout(() => {
+        mapInstance.invalidateSize();
+        fitMapToLocations(locations);
+      }, 100);
+    }
+
+    function fitMapToLocations(items) {
+      if (!mapInstance || !items.length) {
+        return;
+      }
+
+      const bounds = items
+        .map((location) => [location.lat, location.lng])
+        .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
+
+      if (!bounds.length) {
+        return;
+      }
+
+      if (bounds.length === 1) {
+        mapInstance.flyTo(bounds[0], 14, {
+          animate: true,
+          duration: 0.7,
+        });
+
+        return;
+      }
+
+      mapInstance.fitBounds(bounds, {
+        padding: [56, 56],
+        maxZoom: 13,
+        animate: true,
+        duration: 0.7,
+      });
+    }
+
+    function renderSpotList(items) {
+      if (!spotList) {
+        return;
+      }
+
+      if (!items.length) {
+        spotList.innerHTML =
+          '<div class="empty-list-card">' +
+            '<h3>表示できるスポットがありません</h3>' +
+            '<p>検索条件を変更するか、条件をリセットしてください。</p>' +
+          '</div>';
+
+        return;
+      }
+
+      spotList.innerHTML = items.map((location) => {
+        const level = location.officialLevel || "fan";
+
+        return `
+          <article
+            class="spot-card level-${escapeHtml(level)}"
+            data-location-id="${escapeHtml(location.id)}"
+          >
+            <div class="spot-card-main">
+              <div class="spot-card-title">${escapeHtml(location.name)}</div>
+
+              <div class="spot-meta-row">
+                ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
+                ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
+                ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
+              </div>
+
+              <div class="level-pill level-${escapeHtml(level)}">
+                ${escapeHtml(location.officialLabel)}
+              </div>
+
+              <div class="spot-card-actions">
+                <button class="spot-button" type="button" data-detail-id="${escapeHtml(location.id)}">
+                  詳細を見る
+                </button>
+
+                <a class="spot-button" href="${detailUrl(location)}">
+                  スポットページ
+                </a>
+
+                <button class="spot-button" type="button" data-map-id="${escapeHtml(location.id)}">
+                  Googleマップ
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      spotList.querySelectorAll(".spot-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          focusLocation(card.dataset.locationId);
+        });
+      });
+
+      spotList.querySelectorAll("[data-detail-id]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          openSpotModal(button.dataset.detailId);
+        });
+      });
+
+      spotList.querySelectorAll("[data-map-id]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          openSpotGoogleMap(button.dataset.mapId);
+        });
+      });
+    }
+
+    function focusLocation(locationId) {
+      const id = String(locationId);
+      const marker = markerMap[id];
+
+      if (!marker || !mapInstance) {
+        return;
+      }
+
+      const latLng = marker.getLatLng();
+
+      mapInstance.flyTo(latLng, 15, {
+        animate: true,
+        duration: 0.85,
+        easeLinearity: 0.25,
+      });
+
+      marker.openPopup();
+      highlightLocation(id);
+    }
+
+    function highlightLocation(locationId) {
+      const id = String(locationId);
+      activeLocationId = id;
+
+      document.querySelectorAll(".spot-card").forEach((card) => {
+        if (card.dataset.locationId === id) {
+          card.classList.add("active");
+
+          setTimeout(() => {
+            card.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }, 100);
+        } else {
+          card.classList.remove("active");
+        }
+      });
+
+      Object.keys(markerMap).forEach((markerId) => {
+        const marker = markerMap[markerId];
+        const location = locations.find((item) => String(item.id) === String(markerId));
+
+        if (!marker || !location) {
+          return;
+        }
+
+        marker.setIcon(createMarkerIcon(location, markerId === id));
+      });
+    }
+
+    function clearActiveLocation() {
+      activeLocationId = null;
+
+      document.querySelectorAll(".spot-card").forEach((card) => {
+        card.classList.remove("active");
+      });
+
+      Object.keys(markerMap).forEach((markerId) => {
+        const marker = markerMap[markerId];
+        const location = locations.find((item) => String(item.id) === String(markerId));
+
+        if (!marker || !location) {
+          return;
+        }
+
+        marker.setIcon(createMarkerIcon(location, false));
+      });
+    }
+
+    function applyFilters() {
+      const keyword = normalizeText(searchInput?.value);
+      const selectedWork = workFilter?.value || "all";
+      const selectedPrefecture = prefectureFilter?.value || "all";
+      const selectedOfficial = officialFilter?.value || "all";
+
+      const filtered = locations.filter((location) => {
+        const target = normalizeText([
+          location.name,
+          location.work,
+          location.prefecture,
+          location.station,
+          location.description,
+          location.access,
+          location.note,
+          (location.tags || []).join(" "),
+        ].join(" "));
+
+        const keywordMatch = !keyword || target.includes(keyword);
+        const workMatch = selectedWork === "all" || location.work === selectedWork;
+        const prefectureMatch = selectedPrefecture === "all" || location.prefecture === selectedPrefecture;
+        const officialMatch = selectedOfficial === "all" || location.officialLevel === selectedOfficial;
+        const tagMatch = activeTag === "all" || (location.tags || []).includes(activeTag);
+
+        return keywordMatch && workMatch && prefectureMatch && officialMatch && tagMatch;
+      });
+
+      renderSpotList(filtered);
+      syncMarkers(filtered);
+      updateResultCount(filtered.length);
+      updateSummary(filtered.length);
+      updateEmptyState(filtered.length);
+    }
+
+    function syncMarkers(filtered) {
+      if (!mapInstance) {
+        return;
+      }
+
+      clearActiveLocation();
+
+      const visibleMap = {};
+
+      filtered.forEach((location) => {
+        visibleMap[String(location.id)] = true;
+      });
+
+      Object.keys(markerMap).forEach((id) => {
+        const marker = markerMap[id];
+
+        if (!marker) {
+          return;
+        }
+
+        if (visibleMap[id]) {
+          if (!mapInstance.hasLayer(marker)) {
+            marker.addTo(mapInstance);
+          }
+        } else {
+          if (mapInstance.hasLayer(marker)) {
+            mapInstance.removeLayer(marker);
+          }
+        }
+      });
+
+      fitMapToLocations(filtered);
+    }
+
+    function updateResultCount(count) {
+      if (!resultCount) {
+        return;
+      }
+
+      resultCount.textContent = count + "件のスポットを表示中";
+    }
+
+    function updateSummary(count) {
+      if (!mapSummary) {
+        return;
+      }
+
+      const labels = [];
+      const keyword = searchInput ? searchInput.value.trim() : "";
+      const selectedWork = workFilter?.value || "all";
+      const selectedPrefecture = prefectureFilter?.value || "all";
+      const selectedOfficial = officialFilter?.value || "all";
+
+      if (keyword) {
+        labels.push("検索: " + keyword);
+      }
+
+      if (selectedWork !== "all") {
+        labels.push("作品: " + selectedWork);
+      }
+
+      if (selectedPrefecture !== "all") {
+        labels.push(selectedPrefecture);
+      }
+
+      if (selectedOfficial === "official") {
+        labels.push("公式");
+      }
+
+      if (selectedOfficial === "tourism") {
+        labels.push("観光協会・自治体");
+      }
+
+      if (selectedOfficial === "fan") {
+        labels.push("ファン考察");
+      }
+
+      if (activeTag !== "all") {
+        labels.push("#" + activeTag);
+      }
+
+      if (!labels.length) {
+        mapSummary.className = "map-summary muted";
+        mapSummary.textContent = count + "件のスポットを表示中";
+        return;
+      }
+
+      mapSummary.className = "map-summary";
+      mapSummary.innerHTML =
+        '<span class="summary-label">絞り込み中</span>' +
+        labels.map((label) => '<span class="summary-pill">' + escapeHtml(label) + '</span>').join("") +
+        '<span class="summary-pill">' + count + '件表示</span>';
+    }
+
+    function updateEmptyState(count) {
+      if (!emptyOverlay) {
+        return;
+      }
+
+      emptyOverlay.hidden = count !== 0;
+    }
+
+    function resetFilters() {
+      if (searchInput) {
+        searchInput.value = "";
+      }
+
+      if (workFilter) {
+        workFilter.value = "all";
+      }
+
+      if (prefectureFilter) {
+        prefectureFilter.value = "all";
+      }
+
+      if (officialFilter) {
+        officialFilter.value = "all";
+      }
+
+      activeTag = "all";
+
+      tagButtons.forEach((button) => {
+        if (button.dataset.tag === "all") {
+          button.classList.add("active");
+        } else {
+          button.classList.remove("active");
+        }
+      });
+
+      applyFilters();
+    }
+
+    function openSpotModal(locationId) {
+      const location = locations.find((item) => String(item.id) === String(locationId));
+
+      if (!location || !modalRoot) {
+        return;
+      }
+
+      modalRoot.innerHTML = `
+        <div class="modal-overlay" id="modal-overlay">
+          <div class="modal-card">
+            <div class="modal-header">
+              <div>
+                <div class="modal-title">${escapeHtml(location.name)}</div>
+                <p class="modal-sub">${escapeHtml(location.work || "作品名未登録")}</p>
+              </div>
+
+              <button class="modal-close" type="button" id="modal-close">
+                閉じる
+              </button>
+            </div>
+
+            <div class="modal-info">
+              <div class="modal-info-row">
+                <div class="modal-label">説明</div>
+                <div class="modal-value">${escapeHtml(location.description || "未登録")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">アクセス</div>
+                <div class="modal-value">${escapeHtml(location.access || "未登録")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">都道府県</div>
+                <div class="modal-value">${escapeHtml(location.prefecture || "未登録")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">最寄駅</div>
+                <div class="modal-value">${escapeHtml(location.station || "未登録")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">関連度</div>
+                <div class="modal-value">${escapeHtml(location.officialLabel || "ファン考察")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">タグ</div>
+                <div class="modal-value">${escapeHtml((location.tags || []).join(", ") || "未登録")}</div>
+              </div>
+
+              <div class="modal-info-row">
+                <div class="modal-label">メモ</div>
+                <div class="modal-value">${escapeHtml(location.note || "未登録")}</div>
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <a class="spot-button" href="${detailUrl(location)}">
+                スポットページ
+              </a>
+
+              <button class="spot-button" type="button" id="modal-google-map">
+                Googleマップ
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("modal-overlay")?.addEventListener("click", closeModal);
+      document.querySelector(".modal-card")?.addEventListener("click", (event) => event.stopPropagation());
+      document.getElementById("modal-close")?.addEventListener("click", closeModal);
+      document.getElementById("modal-google-map")?.addEventListener("click", () => {
+        openSpotGoogleMap(location.id);
+      });
+    }
+
+    function closeModal() {
+      if (!modalRoot) {
+        return;
+      }
+
+      modalRoot.innerHTML = "";
+    }
+
+    function openSpotGoogleMap(locationId) {
+      const location = locations.find((item) => String(item.id) === String(locationId));
+
+      if (!location) {
+        return;
+      }
+
+      window.open(googleMapsUrl(location), "_blank");
+    }
+
+    window.openSpotModal = openSpotModal;
+    window.openSpotGoogleMap = openSpotGoogleMap;
+
+    document.querySelectorAll(".count-up").forEach((element) => {
+      animateCountUp(element, Number(element.dataset.count || 0), 720);
+    });
+
+    searchInput?.addEventListener("input", applyFilters);
+    workFilter?.addEventListener("change", applyFilters);
+    prefectureFilter?.addEventListener("change", applyFilters);
+    officialFilter?.addEventListener("change", applyFilters);
+    resetButton?.addEventListener("click", resetFilters);
+    emptyResetButton?.addEventListener("click", resetFilters);
+
+    tagButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeTag = button.dataset.tag || "all";
+
+        tagButtons.forEach((item) => {
+          if (item.dataset.tag === activeTag) {
+            item.classList.add("active");
+          } else {
+            item.classList.remove("active");
+          }
+        });
+
+        applyFilters();
+      });
+    });
+
+    renderSpotList(locations);
+    updateResultCount(locations.length);
+    updateSummary(locations.length);
+    updateEmptyState(locations.length);
+    initMap();
+  </script>
+</BaseLayout>

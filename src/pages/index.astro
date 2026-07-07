@@ -1,431 +1,1224 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { works, spots, areas } from "../data/portalData.js";
 
-const title = "Seichi Atlas | アニメ聖地巡礼ポータル";
-const description = "Seichi Atlasは、アニメや漫画の聖地巡礼スポットを作品・地域・地図から探し、訪問記録として残せる聖地巡礼ポータルです。";
+const title = "Seichi Atlas | アニメ聖地巡礼を地図から探す";
+const description = "Seichi Atlasは、アニメや漫画の聖地巡礼スポットを作品・地域・地図から探せる非公式ポータルです。";
+
+const normalizedWorks = works.map((work) => {
+  const workSpots = spots.filter((spot) => spot.workSlug === work.slug);
+
+  const prefectures = [
+    ...new Set(
+      workSpots
+        .map((spot) => spot.prefecture)
+        .filter(Boolean)
+    ),
+  ];
+
+  const tags = [
+    ...new Set(
+      workSpots
+        .flatMap((spot) => Array.isArray(spot.tags) ? spot.tags : [])
+        .filter(Boolean)
+    ),
+  ];
+
+  return {
+    ...work,
+    spotCount: workSpots.length,
+    prefectures,
+    tags,
+  };
+});
+
+const prefectures = [
+  ...new Set(
+    spots
+      .map((spot) => spot.prefecture)
+      .filter(Boolean)
+  ),
+];
+
+const visibleAreas = areas.slice(0, 8);
+
+const totalWorks = works.length;
+const totalSpots = spots.length;
+const totalAreas = areas.length;
 ---
 
 <BaseLayout title={title} description={description} canonical="/">
-  <main class="page">
-    <section class="hero portal-hero">
-      <div class="hero-content">
-        <p class="kicker">Anime Pilgrimage Portal</p>
+  <main class="home-page">
 
-        <h1>
-          アニメの聖地巡礼を、<br />
-          探して、歩いて、記録する。
-        </h1>
+    <section class="home-hero reveal-item">
+      <div class="home-hero-main">
+        <div class="section-kicker">SEICHI ATLAS</div>
 
-        <p class="hero-lead">
+        <h1>聖地巡礼スポットを、作品と地図から探す。</h1>
+
+        <p>
           Seichi Atlasは、アニメ・漫画等の聖地巡礼スポットを
-          作品・地域・地図から探し、自分の訪問記録として残せる
-          非公式の聖地巡礼ポータルです。
+          作品・地域・地図から探せる非公式ポータルです。
         </p>
 
         <div class="hero-actions">
-          <a class="button-primary" href="/works">作品から探す</a>
-          <a class="button-secondary" href="/areas">地域から探す</a>
-          <a class="button-secondary" href="/app">記録アプリを開く</a>
+          <a class="button-primary" href="/map/">マップから探す</a>
+          <a class="button-secondary" href="/works/">作品から探す</a>
         </div>
-
-        <p class="hero-note">
-          ※ 本サービスは各作品・権利者・自治体・施設等とは関係のない非公式サービスです。
-        </p>
       </div>
 
-      <div class="portal-card">
-        <div class="portal-map">
-          <div class="portal-pin pin-1">📍</div>
-          <div class="portal-pin pin-2">📍</div>
-          <div class="portal-pin pin-3">📍</div>
-          <div class="portal-pin pin-4">📍</div>
+      <div class="home-hero-side">
+        <div class="stat-card">
+          <span>作品</span>
+          <strong class="count-up" data-count={totalWorks}>0</strong>
         </div>
 
-        <div class="portal-stats">
-          <div>
-            <span>作品</span>
-            <strong>Works</strong>
-          </div>
-          <div>
-            <span>地域</span>
-            <strong>Areas</strong>
-          </div>
-          <div>
-            <span>記録</span>
-            <strong>Logs</strong>
-          </div>
+        <div class="stat-card">
+          <span>スポット</span>
+          <strong class="count-up" data-count={totalSpots}>0</strong>
+        </div>
+
+        <div class="stat-card">
+          <span>エリア</span>
+          <strong class="count-up" data-count={totalAreas}>0</strong>
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <p class="kicker">Explore</p>
-      <h2>聖地を探す</h2>
+    <section class="home-app-layout">
 
-      <div class="portal-grid">
-        <a class="portal-link-card" href="/works">
-          <div class="portal-icon">🎬</div>
-          <h3>作品から探す</h3>
-          <p>
-            好きな作品を起点に、関連する聖地スポットを探せます。
-          </p>
-        </a>
+      <aside class="filter-panel reveal-item">
+        <button class="mobile-filter-toggle" type="button" id="mobile-filter-toggle">
+          <span>絞り込みを開く</span>
+        </button>
 
-        <a class="portal-link-card" href="/areas">
-          <div class="portal-icon">🗾</div>
-          <h3>地域から探す</h3>
-          <p>
-            東京、京都、北海道など、都道府県別に聖地巡礼スポットを探せます。
-          </p>
-        </a>
+        <div class="filter-card">
+          <div class="filter-title">探す</div>
 
-        <a class="portal-link-card" href="/app">
-          <div class="portal-icon">🗺️</div>
-          <h3>地図から探す</h3>
-          <p>
-            記録アプリ側では、登録された聖地を地図上から探せます。
-          </p>
-        </a>
-      </div>
-    </section>
+          <input
+            id="work-search"
+            class="filter-input"
+            type="search"
+            placeholder="作品名・年・地域で検索"
+            autocomplete="off"
+          />
 
-    <section class="section">
-      <p class="kicker">Record</p>
-      <h2>巡礼を記録する</h2>
+          <div class="filter-section">
+            <div class="filter-subtitle">地域</div>
 
-      <div class="feature-grid">
-        <article class="feature-card">
-          <div class="feature-icon">✅</div>
-          <h3>訪問済みを保存</h3>
-          <p>
-            訪れた聖地を「訪問した」として記録できます。
-          </p>
-        </article>
+            <div class="filter-chip-list">
+              <button class="filter-chip active" type="button" data-region="all">
+                すべて
+              </button>
 
-        <article class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>進捗を見える化</h3>
-          <p>
-            作品ごとの巡礼達成率や訪問数を確認できます。
-          </p>
-        </article>
+              {prefectures.map((prefecture) => (
+                <button class="filter-chip" type="button" data-region={prefecture}>
+                  {prefecture}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <article class="feature-card">
-          <div class="feature-icon">🧭</div>
-          <h3>マイ巡礼マップ</h3>
-          <p>
-            訪問済みスポットを自分だけの巡礼マップとして振り返れます。
-          </p>
-        </article>
-      </div>
-    </section>
+          <div class="filter-section">
+            <div class="filter-subtitle">スポット数</div>
 
-    <section class="section guide-section">
-      <div>
-        <p class="kicker">Guide</p>
-        <h2>聖地巡礼を知る</h2>
-        <p>
-          初めて聖地巡礼をする人向けに、楽しみ方、使い方、現地でのマナーをまとめています。
+            <div class="filter-chip-list">
+              <button class="filter-chip active" type="button" data-count-filter="all">
+                すべて
+              </button>
+
+              <button class="filter-chip" type="button" data-count-filter="has-spots">
+                登録あり
+              </button>
+
+              <button class="filter-chip" type="button" data-count-filter="no-spots">
+                未登録
+              </button>
+            </div>
+          </div>
+
+          <button class="filter-reset-button" type="button" id="filter-reset">
+            条件をリセット
+          </button>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <div class="home-section-header reveal-item">
+          <div>
+            <div class="section-kicker">HOME</div>
+            <h2>作品コレクション</h2>
+            <p>
+              作品を選んで、関連する聖地スポットやエリアを確認できます。
+            </p>
+          </div>
+
+          <a class="section-link" href="/map/">地図で見る</a>
+        </div>
+
+        <div id="active-filter-summary" class="active-filter-summary muted reveal-item">
+          すべての作品を表示中
+        </div>
+
+        <p id="work-result-count" class="result-count reveal-item">
+          {normalizedWorks.length}件の作品を表示中
         </p>
+
+        <div class="work-grid" id="work-grid">
+          {normalizedWorks.map((work, index) => (
+            <a
+              class="work-card"
+              href={work.slug ? `/works/${work.slug}/` : "/works/"}
+              style={`--card-delay:${index * 42}ms;`}
+              data-title={work.title}
+              data-year={work.year}
+              data-prefectures={work.prefectures.join(",")}
+              data-tags={work.tags.join(",")}
+              data-count={work.spotCount}
+            >
+              <div class="work-card-top">
+                <div>
+                  <h3>{work.title}</h3>
+
+                  <div class="work-meta">
+                    {work.year && <span>{work.year}</span>}
+                    <span>{work.spotCount}スポット</span>
+                    {work.prefectures.slice(0, 3).map((prefecture) => (
+                      <span>{prefecture}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div class={`status-pill ${work.spotCount > 0 ? "active" : "empty"}`}>
+                  {work.spotCount > 0 ? "公開中" : "未登録"}
+                </div>
+              </div>
+
+              <div class="work-card-bottom">
+                <div class="progress-head">
+                  <span>登録スポット</span>
+                  <strong>{work.spotCount}件</strong>
+                </div>
+
+                <div class="progress-bar">
+                  <div
+                    class="progress-fill"
+                    style={`width:${Math.min(100, work.spotCount * 12)}%;`}
+                  >
+                  </div>
+                </div>
+
+                <div class="work-card-foot">
+                  <span>
+                    {work.prefectures.length > 0 ? work.prefectures.join(" / ") : "エリア未登録"}
+                  </span>
+
+                  <span class="card-link">
+                    詳細を見る
+                    <span class="arrow">→</span>
+                  </span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <div class="empty-result-card" id="empty-result" hidden>
+          <div class="empty-icon">🗺️</div>
+          <h3>表示できる作品がありません</h3>
+          <p>検索条件を変更するか、条件をリセットしてください。</p>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="area-section reveal-item">
+      <div class="home-section-header">
+        <div>
+          <div class="section-kicker">AREA</div>
+          <h2>地域別に見る</h2>
+          <p>
+            地域ページはSEO・回遊用として残し、都道府県やエリアから関連スポットを確認できます。
+          </p>
+        </div>
+
+        <a class="section-link" href="/areas/">地域一覧へ</a>
       </div>
 
-      <div class="guide-links">
-        <a href="/pilgrimage">聖地巡礼とは</a>
-        <a href="/how-to-use">Seichi Atlasの使い方</a>
-        <a href="/manners">聖地巡礼のマナー</a>
+      <div class="area-grid">
+        {visibleAreas.map((area) => (
+          <a class="area-card" href={area.slug ? `/areas/${area.slug}/` : "/areas/"}>
+            <span>AREA</span>
+            <strong>{area.name}</strong>
+            <small>関連スポットを見る →</small>
+          </a>
+        ))}
       </div>
     </section>
 
-    <section class="notice-section">
-      <div>
-        <p class="kicker">Important</p>
-        <h2>現地のルールが最優先です</h2>
-        <p>
-          掲載情報は訪問を推奨・保証するものではありません。
-          聖地を訪問する際は、立入可否、撮影可否、施設案内、近隣住民への配慮を必ず確認してください。
-        </p>
-      </div>
-
-      <a class="button-secondary" href="/manners">マナーを見る</a>
-    </section>
-
-    <section class="final-cta">
-      <p class="kicker">Start</p>
-      <h2>聖地巡礼を探して、記録する</h2>
-      <p>
-        まずは作品や地域から聖地を探し、訪問した場所を記録してみましょう。
-      </p>
-
-      <div class="hero-actions">
-        <a class="button-primary" href="/works">作品から探す</a>
-        <a class="button-secondary" href="/app">記録アプリを開く</a>
-      </div>
-    </section>
   </main>
 
   <style>
-    .portal-hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-      gap: 40px;
-      align-items: center;
-      min-height: 560px;
+    .home-page {
+      width: calc(100% - 32px);
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 44px 0 72px;
     }
 
-    .hero-lead {
-      max-width: 660px;
+    .home-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 30px;
+      padding: 30px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .section-kicker {
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .home-hero h1 {
+      max-width: 760px;
+      margin: 8px 0 12px;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.12;
+      letter-spacing: -0.05em;
+      color: var(--text);
+    }
+
+    .home-hero p {
+      max-width: 720px;
+      margin: 0;
       color: var(--sub);
-      font-size: 17px;
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.8;
     }
 
     .hero-actions {
       display: flex;
-      gap: 14px;
       flex-wrap: wrap;
-      margin-top: 28px;
+      gap: 10px;
+      margin-top: 22px;
     }
 
-    .hero-note {
-      margin-top: 20px;
-      color: var(--sub);
-      font-size: 13px;
+    .home-hero-side {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
-    .portal-card {
+    .stat-card {
+      padding: 20px;
+      border-radius: 22px;
       background: #ffffff;
-      border-radius: 32px;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .stat-card span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .stat-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 38px;
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .home-app-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .filter-panel {
+      position: sticky;
+      top: 90px;
+    }
+
+    .mobile-filter-toggle {
+      display: none;
+    }
+
+    .filter-card {
+      background: var(--card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-card);
       padding: 22px;
       box-shadow: var(--shadow);
     }
 
-    .portal-map {
-      position: relative;
-      height: 320px;
-      border-radius: 24px;
-      overflow: hidden;
-      background:
-        linear-gradient(90deg, rgba(212,165,154,0.16) 1px, transparent 1px),
-        linear-gradient(rgba(212,165,154,0.16) 1px, transparent 1px),
-        #f4ece5;
-      background-size: 38px 38px;
-    }
-
-    .portal-map::before {
-      content: "";
-      position: absolute;
-      inset: 68px 28px auto 28px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(63, 53, 45, 0.12);
-      transform: rotate(-12deg);
-    }
-
-    .portal-map::after {
-      content: "";
-      position: absolute;
-      left: 70px;
-      right: 44px;
-      bottom: 76px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(63, 53, 45, 0.1);
-      transform: rotate(18deg);
-    }
-
-    .portal-pin {
-      position: absolute;
-      font-size: 30px;
-      filter: drop-shadow(0 8px 12px rgba(63, 53, 45, 0.18));
-    }
-
-    .pin-1 {
-      top: 68px;
-      left: 72px;
-    }
-
-    .pin-2 {
-      top: 136px;
-      right: 72px;
-    }
-
-    .pin-3 {
-      bottom: 68px;
-      left: 150px;
-    }
-
-    .pin-4 {
-      bottom: 124px;
-      right: 132px;
-    }
-
-    .portal-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .portal-stats div {
-      padding: 14px;
-      border-radius: 18px;
-      background: #f7f3ee;
-    }
-
-    .portal-stats span {
-      display: block;
-      color: var(--sub);
-      font-size: 12px;
-    }
-
-    .portal-stats strong {
-      display: block;
-      margin-top: 4px;
+    .filter-title {
       font-size: 18px;
-    }
-
-    .section {
-      margin-top: 80px;
-    }
-
-    .section > h2,
-    .notice-section h2,
-    .final-cta h2 {
-      border: none;
-      margin-top: 0;
-      padding-bottom: 0;
-      font-size: clamp(28px, 4vw, 40px);
-    }
-
-    .portal-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 28px;
-    }
-
-    .portal-link-card,
-    .feature-card {
-      display: block;
-      background: #ffffff;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .portal-link-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 30px rgba(120, 90, 60, 0.1);
-    }
-
-    .portal-icon,
-    .feature-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-    }
-
-    .portal-link-card p,
-    .feature-card p,
-    .guide-section p,
-    .notice-section p,
-    .final-cta p {
-      color: var(--sub);
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-top: 28px;
-    }
-
-    .guide-section {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(260px, 0.6fr);
-      gap: 24px;
-      align-items: center;
-      padding: 32px;
-      border-radius: 28px;
-      background: #ffffff;
-      box-shadow: 0 8px 24px rgba(120, 90, 60, 0.06);
-    }
-
-    .guide-section h2 {
-      border: none;
-      margin-top: 0;
-      padding-bottom: 0;
-      font-size: clamp(28px, 4vw, 40px);
-    }
-
-    .guide-links {
-      display: grid;
-      gap: 12px;
-    }
-
-    .guide-links a {
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: #f7f3ee;
-      font-weight: 800;
+      font-weight: 950;
+      margin-bottom: 18px;
       color: var(--text);
     }
 
-    .notice-section {
-      margin-top: 80px;
+    .filter-input {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card-subtle);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      outline: none;
+      margin-bottom: 20px;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .filter-input:focus {
+      border-color: var(--accent);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
+    }
+
+    .filter-section {
+      margin-top: 22px;
+    }
+
+    .filter-subtitle {
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .filter-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      min-height: 34px;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .filter-chip:hover {
+      transform: translateY(-1px);
+      background: #e8eef6;
+      color: var(--text);
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.22);
+      animation: chipPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .filter-reset-button {
+      width: 100%;
+      min-height: 40px;
+      margin-top: 22px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .filter-reset-button:hover {
+      transform: translateY(-1px);
+      background: var(--card-subtle);
+      color: var(--text);
+    }
+
+    .main-panel {
+      min-width: 0;
+    }
+
+    .home-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 18px;
+      padding: 26px;
+      border-radius: var(--radius-large);
+      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .home-section-header h2 {
+      margin: 6px 0 8px;
+      color: var(--text);
+      font-size: 32px;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+    }
+
+    .home-section-header p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 1.7;
+    }
+
+    .section-link {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 900;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .section-link:hover {
+      transform: translateY(-1px);
+      background: #bae6fd;
+    }
+
+    .active-filter-summary {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 28px;
-      padding: 32px;
-      border-radius: 28px;
-      background: #fffaf7;
-      border: 1px solid var(--accent);
-    }
-
-    .final-cta {
-      margin-top: 80px;
-      padding: 36px;
-      border-radius: 32px;
-      background: #3f352d;
-      color: #ffffff;
-    }
-
-    .final-cta h2 {
-      color: #ffffff;
-    }
-
-    .final-cta p {
-      color: rgba(255, 255, 255, 0.74);
-      max-width: 680px;
-    }
-
-    .final-cta .button-primary {
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
       background: #ffffff;
-      color: #3f352d;
+      border: 1px solid var(--border-soft);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
     }
 
-    .final-cta .button-secondary {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.24);
+    .active-filter-summary.muted {
+      color: var(--muted);
     }
 
-    @media (max-width: 860px) {
-      .portal-hero,
-      .portal-grid,
-      .feature-grid,
-      .guide-section {
+    .summary-label {
+      color: var(--accent-dark);
+      font-weight: 950;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .result-count {
+      margin: 8px 0 14px;
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .work-grid.filter-refreshing .work-card:not([hidden]) {
+      animation: filterResultFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .work-card {
+      min-height: 260px;
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      animation: cardIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: var(--card-delay);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .work-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-strong);
+      border-color: var(--accent-soft);
+    }
+
+    .work-card:active {
+      transform: translateY(-1px) scale(0.985);
+    }
+
+    .work-card-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .work-card h3 {
+      min-height: 56px;
+      margin: 0;
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 950;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .work-meta {
+      min-height: 82px;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .work-meta span {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--card-subtle);
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .status-pill {
+      flex-shrink: 0;
+      white-space: nowrap;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.03em;
+    }
+
+    .status-pill.active {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .status-pill.empty {
+      background: #eef2f7;
+      color: var(--sub);
+    }
+
+    .work-card-bottom {
+      margin-top: auto;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .progress-head strong {
+      color: var(--accent-dark);
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #e8edf3;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #38bdf8);
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .work-card-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .card-link {
+      color: var(--accent);
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .arrow {
+      display: inline-flex;
+      transition: transform 0.18s ease;
+    }
+
+    .work-card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    .empty-result-card {
+      margin-top: 18px;
+      padding: 42px 28px;
+      border-radius: var(--radius-large);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      text-align: center;
+      animation: emptyStateIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .empty-icon {
+      margin-bottom: 12px;
+      font-size: 34px;
+      animation: emptyIconFloat 1.8s ease-in-out infinite;
+    }
+
+    .empty-result-card h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+
+    .empty-result-card p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .area-section {
+      margin-top: 34px;
+    }
+
+    .area-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .area-card {
+      display: grid;
+      gap: 6px;
+      padding: 20px;
+      border-radius: var(--radius-card);
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .area-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-strong);
+      border-color: var(--accent-soft);
+    }
+
+    .area-card span {
+      color: var(--accent-dark);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+    }
+
+    .area-card strong {
+      color: var(--text);
+      font-size: 19px;
+      font-weight: 950;
+    }
+
+    .area-card small {
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .reveal-item {
+      opacity: 0;
+      animation: contentFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes contentFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes filterResultFadeIn {
+      from {
+        opacity: 0.42;
+        transform: translateY(8px) scale(0.99);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes chipPop {
+      from {
+        transform: scale(0.94);
+      }
+
+      65% {
+        transform: scale(1.05);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes emptyStateIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes emptyIconFloat {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      35% {
+        transform: translateY(-3px) rotate(-2deg);
+      }
+
+      70% {
+        transform: translateY(1px) rotate(2deg);
+      }
+
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .home-hero {
         grid-template-columns: 1fr;
       }
 
-      .portal-hero {
+      .home-hero-side {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .home-app-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .home-page {
+        width: calc(100% - 24px);
+        padding: 26px 0 52px;
+      }
+
+      .home-hero {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .home-hero h1 {
+        font-size: 34px;
+      }
+
+      .home-hero-side {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .stat-card {
+        padding: 14px 10px;
+      }
+
+      .stat-card strong {
+        font-size: 26px;
+      }
+
+      .mobile-filter-toggle {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #ffffff;
+        color: var(--text);
+        box-shadow: var(--shadow);
+        font-weight: 900;
+      }
+
+      .filter-panel .filter-card {
+        display: none;
+      }
+
+      .filter-panel.filter-open .filter-card {
+        display: block;
+        animation: contentFadeUp 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .filter-panel.filter-open .mobile-filter-toggle {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: var(--accent);
+      }
+
+      .home-section-header {
+        display: block;
+        padding: 20px;
+        border-radius: 24px;
+      }
+
+      .home-section-header h2 {
+        font-size: 26px;
+      }
+
+      .section-link {
+        width: 100%;
+        margin-top: 16px;
+      }
+
+      .work-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .work-card {
         min-height: auto;
       }
 
-      .notice-section {
-        align-items: flex-start;
-        flex-direction: column;
+      .work-card-top {
+        display: block;
+      }
+
+      .work-card h3 {
+        min-height: auto;
+        font-size: 19px;
+      }
+
+      .work-meta {
+        min-height: auto;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        margin-top: 14px;
+      }
+
+      .work-card-foot {
+        display: block;
+      }
+
+      .card-link {
+        display: inline-flex;
+        margin-top: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>
+
+  <script>
+    const searchInput = document.getElementById("work-search");
+    const regionButtons = Array.from(document.querySelectorAll("[data-region]"));
+    const countButtons = Array.from(document.querySelectorAll("[data-count-filter]"));
+    const resetButton = document.getElementById("filter-reset");
+    const cards = Array.from(document.querySelectorAll(".work-card"));
+    const countText = document.getElementById("work-result-count");
+    const summary = document.getElementById("active-filter-summary");
+    const emptyResult = document.getElementById("empty-result");
+    const grid = document.getElementById("work-grid");
+    const mobileFilterToggle = document.getElementById("mobile-filter-toggle");
+    const filterPanel = document.querySelector(".filter-panel");
+
+    let activeRegion = "all";
+    let activeCount = "all";
+
+    function normalizeText(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function animateCountUp(element, target, duration) {
+      const endValue = Number(target || 0);
+      const startTime = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = Math.round(endValue * eased);
+
+        element.textContent = String(value);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          element.textContent = String(endValue);
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function setActiveButton(buttons, key, value) {
+      buttons.forEach((button) => {
+        if (button.dataset[key] === value) {
+          button.classList.add("active");
+        } else {
+          button.classList.remove("active");
+        }
+      });
+    }
+
+    function triggerFilterMotion() {
+      if (!grid) {
+        return;
+      }
+
+      grid.classList.remove("filter-refreshing");
+
+      void grid.offsetWidth;
+
+      grid.classList.add("filter-refreshing");
+
+      setTimeout(() => {
+        grid.classList.remove("filter-refreshing");
+      }, 300);
+    }
+
+    function renderSummary(keyword, visibleCount) {
+      if (!summary) {
+        return;
+      }
+
+      const labels = [];
+
+      if (keyword) {
+        labels.push(`検索: ${searchInput.value.trim()}`);
+      }
+
+      if (activeRegion !== "all") {
+        labels.push(activeRegion);
+      }
+
+      if (activeCount === "has-spots") {
+        labels.push("登録あり");
+      }
+
+      if (activeCount === "no-spots") {
+        labels.push("未登録");
+      }
+
+      if (labels.length === 0) {
+        summary.className = "active-filter-summary muted";
+        summary.textContent = "すべての作品を表示中";
+        return;
+      }
+
+      summary.className = "active-filter-summary";
+      summary.innerHTML =
+        '<span class="summary-label">絞り込み中</span>' +
+        labels.map((label) => `<span class="summary-pill">${label}</span>`).join("") +
+        `<span class="summary-pill">${visibleCount}件表示</span>`;
+    }
+
+    function applyFilters() {
+      const keyword = normalizeText(searchInput?.value);
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const title = normalizeText(card.dataset.title);
+        const year = normalizeText(card.dataset.year);
+        const prefectures = String(card.dataset.prefectures || "");
+        const tags = String(card.dataset.tags || "");
+        const spotCount = Number(card.dataset.count || 0);
+
+        const keywordTarget = normalizeText([
+          title,
+          year,
+          prefectures,
+          tags,
+        ].join(" "));
+
+        const keywordMatch = !keyword || keywordTarget.includes(keyword);
+
+        const regionMatch =
+          activeRegion === "all" ||
+          prefectures.split(",").includes(activeRegion);
+
+        let countMatch = true;
+
+        if (activeCount === "has-spots") {
+          countMatch = spotCount > 0;
+        }
+
+        if (activeCount === "no-spots") {
+          countMatch = spotCount === 0;
+        }
+
+        const isVisible = keywordMatch && regionMatch && countMatch;
+
+        card.hidden = !isVisible;
+
+        if (isVisible) {
+          visibleCount += 1;
+        }
+      });
+
+      if (countText) {
+        countText.textContent = `${visibleCount}件の作品を表示中`;
+      }
+
+      if (emptyResult) {
+        emptyResult.hidden = visibleCount !== 0;
+      }
+
+      renderSummary(keyword, visibleCount);
+      triggerFilterMotion();
+    }
+
+    document.querySelectorAll(".count-up").forEach((element) => {
+      animateCountUp(element, Number(element.dataset.count || 0), 720);
+    });
+
+    searchInput?.addEventListener("input", applyFilters);
+
+    regionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeRegion = button.dataset.region || "all";
+        setActiveButton(regionButtons, "region", activeRegion);
+        applyFilters();
+      });
+    });
+
+    countButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeCount = button.dataset.countFilter || "all";
+        setActiveButton(countButtons, "countFilter", activeCount);
+        applyFilters();
+      });
+    });
+
+    resetButton?.addEventListener("click", () => {
+      if (searchInput) {
+        searchInput.value = "";
+      }
+
+      activeRegion = "all";
+      activeCount = "all";
+
+      setActiveButton(regionButtons, "region", "all");
+      setActiveButton(countButtons, "countFilter", "all");
+
+      applyFilters();
+    });
+
+    mobileFilterToggle?.addEventListener("click", () => {
+      if (!filterPanel) {
+        return;
+      }
+
+      filterPanel.classList.toggle("filter-open");
+
+      const isOpen = filterPanel.classList.contains("filter-open");
+
+      const label = mobileFilterToggle.querySelector("span");
+
+      if (label) {
+        label.textContent = isOpen ? "絞り込みを閉じる" : "絞り込みを開く";
+      }
+    });
+  </script>
 </BaseLayout>
