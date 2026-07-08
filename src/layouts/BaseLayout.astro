@@ -19,6 +19,13 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
     <title>{title}</title>
     <meta name="description" content={description} />
 
@@ -87,12 +94,22 @@ const pageUrl = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
       body {
         margin: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
+        font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        font-feature-settings: "palt";
         background:
           radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 34%),
           linear-gradient(180deg, var(--bg) 0%, #ffffff 100%);
         color: var(--text);
         line-height: 1.8;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
       }
 
       a {
