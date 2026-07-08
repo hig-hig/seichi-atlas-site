@@ -334,6 +334,20 @@ const description =
               <p>{spot.note}</p>
             </div>
           )}
+
+          {spot.sourceUrl && (
+            <div class="info-box source-box">
+              <h3>出典・参考リンク</h3>
+              <a
+                class="source-link"
+                href={spot.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                公式・観光情報を見る
+              </a>
+            </div>
+          )}
         </section>
 
         <section class="content-card reveal-item">
@@ -779,6 +793,10 @@ const description =
       border-color: #fed7aa;
     }
 
+    .source-box {
+      background: #ffffff;
+    }
+
     .info-box h3,
     .map-action-card h3 {
       margin: 0 0 8px;
@@ -794,6 +812,32 @@ const description =
       font-size: 14px;
       font-weight: 750;
       line-height: 1.7;
+    }
+
+    .source-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      margin-top: 4px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .source-link::after {
+      content: "↗";
+      margin-left: 6px;
+      font-size: 12px;
+    }
+
+    .source-link:hover {
+      transform: translateY(-1px);
+      background: var(--card-subtle);
     }
 
     .map-action-card {
