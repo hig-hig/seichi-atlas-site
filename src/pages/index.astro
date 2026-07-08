@@ -45,20 +45,44 @@ const visibleAreas = areas.slice(0, 8);
 const totalWorks = works.length;
 const totalSpots = spots.length;
 const totalAreas = areas.length;
+
+const heroMapSpots = spots
+  .map((spot, index) => {
+    const work = works.find((item) => item.slug === spot.workSlug);
+    const lat = Number(spot.lat);
+    const lng = Number(spot.lng);
+
+    return {
+      id: String(spot.id || spot.slug || index + 1),
+      name: spot.name || "聖地スポット",
+      work: spot.work || spot.workTitle || work?.title || "",
+      slug: spot.slug || "",
+      lat,
+      lng,
+    };
+  })
+  .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng))
+  .slice(0, 8);
+
+const heroMapSpotsJson = JSON.stringify(heroMapSpots).replace(/</g, "\\u003c");
 ---
 
 <BaseLayout title={title} description={description} canonical="/">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <main class="home-page">
 
     <section class="home-hero reveal-item">
       <div class="home-hero-main">
         <div class="section-kicker">SEICHI ATLAS</div>
 
-        <h1>聖地巡礼スポットを、作品と地図から探す。</h1>
+        <h1>アニメの舞台を、地図から探す。</h1>
 
         <p>
-          Seichi Atlasは、アニメ・漫画等の聖地巡礼スポットを
-          作品・地域・地図から探せる非公式ポータルです。
+          作品・地域・スポットを横断して、聖地巡礼の行き先を見つけよう。
         </p>
 
         <div class="hero-actions">
@@ -67,20 +91,24 @@ const totalAreas = areas.length;
         </div>
       </div>
 
-      <div class="home-hero-side">
-        <div class="stat-card">
-          <span>作品</span>
-          <strong class="count-up" data-count={totalWorks}>0</strong>
-        </div>
+      <div class="home-hero-visual">
+        <div class="map-visual">
+          <div id="home-hero-map" class="home-hero-map" aria-label="聖地スポットの地図プレビュー"></div>
 
-        <div class="stat-card">
-          <span>スポット</span>
-          <strong class="count-up" data-count={totalSpots}>0</strong>
-        </div>
+          <div class="map-badge badge-spots">
+            <strong>{totalSpots}</strong>
+            <span>spots</span>
+          </div>
 
-        <div class="stat-card">
-          <span>エリア</span>
-          <strong class="count-up" data-count={totalAreas}>0</strong>
+          <div class="map-badge badge-works">
+            <strong>{totalWorks}</strong>
+            <span>works</span>
+          </div>
+
+          <div class="map-badge badge-areas">
+            <strong>{totalAreas}</strong>
+            <span>areas</span>
+          </div>
         </div>
       </div>
     </section>
@@ -268,15 +296,26 @@ const totalAreas = areas.length;
 
     .home-hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
-      gap: 24px;
+      grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+      gap: 30px;
       align-items: stretch;
+      min-height: 460px;
       margin-bottom: 30px;
-      padding: 30px;
+      padding: 34px;
       border-radius: var(--radius-large);
-      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(14, 165, 233, 0.14), transparent 30%),
+        linear-gradient(135deg, var(--card) 0%, var(--card-subtle) 100%);
       border: 1px solid var(--border-soft);
       box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .home-hero-main {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
     }
 
     .section-kicker {
@@ -290,7 +329,7 @@ const totalAreas = areas.length;
     .home-hero h1 {
       max-width: 760px;
       margin: 8px 0 12px;
-      font-size: clamp(34px, 5vw, 56px);
+      font-size: clamp(38px, 5vw, 66px);
       line-height: 1.12;
       letter-spacing: -0.05em;
       color: var(--text);
@@ -312,41 +351,128 @@ const totalAreas = areas.length;
       margin-top: 22px;
     }
 
-    .home-hero-side {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+    .home-hero-visual {
+      min-width: 0;
+      display: flex;
+      align-items: center;
     }
 
-    .stat-card {
-      padding: 20px;
-      border-radius: 22px;
-      background: #ffffff;
+    .map-visual {
+      position: relative;
+      width: 100%;
+      min-height: 380px;
+      border-radius: 28px;
+      overflow: hidden;
+      background: var(--card-subtle);
       border: 1px solid var(--border-soft);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: var(--shadow);
     }
 
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-strong);
+    .map-visual::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.56) 0%, transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 42%);
     }
 
-    .stat-card span {
+    .home-hero-map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      height: 100%;
+    }
+
+    .map-visual .leaflet-container {
+      background: var(--card-subtle);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .map-visual .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
+    .hero-map-popup {
+      display: grid;
+      gap: 2px;
+      min-width: 150px;
+    }
+
+    .hero-map-popup strong {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .hero-map-popup span {
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero-map-popup a {
+      margin-top: 4px;
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .hero-map-marker {
       display: block;
-      margin-bottom: 8px;
-      color: var(--muted);
+      width: 18px;
+      height: 18px;
+      border: 3px solid #ffffff;
+      border-radius: 50% 50% 50% 0;
+      background: var(--accent);
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.34);
+      transform: rotate(-45deg);
+    }
+
+    .map-badge {
+      position: absolute;
+      z-index: 5;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      color: var(--accent-dark);
+    }
+
+    .map-badge strong {
+      font-size: 24px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .map-badge span {
+      color: var(--sub);
       font-size: 12px;
       font-weight: 900;
     }
 
-    .stat-card strong {
-      display: block;
-      color: var(--text);
-      font-size: 38px;
-      font-weight: 950;
-      line-height: 1;
-      letter-spacing: -0.04em;
+    .badge-spots {
+      left: 22px;
+      top: 24px;
+    }
+
+    .badge-works {
+      right: 28px;
+      top: 42px;
+    }
+
+    .badge-areas {
+      left: 42%;
+      bottom: 24px;
     }
 
     .home-app-layout {
@@ -882,8 +1008,12 @@ const totalAreas = areas.length;
         grid-template-columns: 1fr;
       }
 
-      .home-hero-side {
-        grid-template-columns: repeat(3, 1fr);
+      .home-hero-visual {
+        min-height: 320px;
+      }
+
+      .map-visual {
+        min-height: 320px;
       }
 
       .home-app-layout {
@@ -904,22 +1034,40 @@ const totalAreas = areas.length;
       .home-hero {
         padding: 22px;
         border-radius: 24px;
+        min-height: auto;
       }
 
       .home-hero h1 {
         font-size: 34px;
       }
 
-      .home-hero-side {
-        grid-template-columns: repeat(3, 1fr);
+      .map-visual {
+        min-height: 280px;
+        border-radius: 22px;
+        background-size: 28px 28px, 28px 28px, auto, auto;
       }
 
-      .stat-card {
-        padding: 14px 10px;
+      .map-badge {
+        padding: 8px 11px;
       }
 
-      .stat-card strong {
-        font-size: 26px;
+      .map-badge strong {
+        font-size: 20px;
+      }
+
+      .badge-spots {
+        left: 14px;
+        top: 16px;
+      }
+
+      .badge-works {
+        right: 14px;
+        top: 28px;
+      }
+
+      .badge-areas {
+        left: 28%;
+        bottom: 16px;
       }
 
       .mobile-filter-toggle {
@@ -1015,7 +1163,12 @@ const totalAreas = areas.length;
     }
   </style>
 
+  <script type="application/json" id="hero-map-spots" set:html={heroMapSpotsJson}></script>
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
+    const heroMapElement = document.getElementById("home-hero-map");
+    const heroMapDataElement = document.getElementById("hero-map-spots");
     const searchInput = document.getElementById("work-search");
     const regionButtons = Array.from(document.querySelectorAll("[data-region]"));
     const countButtons = Array.from(document.querySelectorAll("[data-count-filter]"));
@@ -1030,6 +1183,80 @@ const totalAreas = areas.length;
 
     let activeRegion = "all";
     let activeCount = "all";
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function initHeroMap() {
+      if (!heroMapElement || !heroMapDataElement || typeof L === "undefined") {
+        return;
+      }
+
+      const previewSpots = JSON.parse(heroMapDataElement.textContent || "[]");
+
+      if (!previewSpots.length) {
+        return;
+      }
+
+      const map = L.map(heroMapElement, {
+        zoomControl: false,
+        scrollWheelZoom: false,
+        dragging: false,
+        touchZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        tap: false,
+      });
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 20,
+      }).addTo(map);
+
+      const markerIcon = L.divIcon({
+        className: "",
+        html: '<span class="hero-map-marker"></span>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 22],
+        popupAnchor: [0, -18],
+      });
+
+      const bounds = [];
+
+      previewSpots.forEach((spot) => {
+        const latLng = [spot.lat, spot.lng];
+        const popupHtml = `
+          <div class="hero-map-popup">
+            <strong>${escapeHtml(spot.name)}</strong>
+            ${spot.work ? `<span>${escapeHtml(spot.work)}</span>` : ""}
+            <a href="/map/">マップで見る</a>
+          </div>
+        `;
+
+        L.marker(latLng, { icon: markerIcon })
+          .addTo(map)
+          .bindPopup(popupHtml);
+
+        bounds.push(latLng);
+      });
+
+      map.fitBounds(bounds, {
+        padding: [42, 42],
+        maxZoom: 11,
+      });
+
+      map.on("click", () => {
+        window.location.href = "/map/";
+      });
+    }
 
     function normalizeText(value) {
       return String(value || "").toLowerCase();
@@ -1172,6 +1399,8 @@ const totalAreas = areas.length;
       renderSummary(keyword, visibleCount);
       triggerFilterMotion();
     }
+
+    initHeroMap();
 
     document.querySelectorAll(".count-up").forEach((element) => {
       animateCountUp(element, Number(element.dataset.count || 0), 720);
