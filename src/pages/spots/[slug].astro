@@ -185,6 +185,12 @@ const description =
 <BaseLayout title={title} description={description} canonical={canonicalPath}>
   <script type="application/ld+json" set:html={JSON.stringify(spotJsonLd)}></script>
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)}></script>
+  {hasLatLng && (
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+  )}
 
   <main class="spot-detail-page">
 
@@ -339,7 +345,19 @@ const description =
             </div>
           </div>
 
-          <div class="map-action-card">
+          <div class={`map-action-card ${hasLatLng ? "has-map" : ""}`}>
+            {hasLatLng && (
+              <div
+                id="spot-detail-map"
+                class="spot-detail-map"
+                data-lat={lat}
+                data-lng={lng}
+                data-title={spotName}
+                aria-label={`${spotName}の地図`}
+              >
+              </div>
+            )}
+
             <div>
               <h3>{spotName}の場所を見る</h3>
               <p>
@@ -349,7 +367,7 @@ const description =
             </div>
 
             <div class="map-action-buttons">
-              <a class="spot-button primary" href={mapPageUrl}>サイト内マップ</a>
+              <a class="spot-button primary" href={mapPageUrl}>全体マップで見る</a>
 
               {hasLatLng && (
                 <a
@@ -358,7 +376,7 @@ const description =
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Googleマップ
+                  Googleマップで開く
                 </a>
               )}
             </div>
@@ -789,6 +807,29 @@ const description =
       border: 1px solid var(--border-soft);
     }
 
+    .map-action-card.has-map {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1fr) auto;
+      align-items: stretch;
+    }
+
+    .spot-detail-map {
+      min-height: 220px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+      z-index: 0;
+    }
+
+    .spot-detail-map .leaflet-container {
+      font-family: inherit;
+    }
+
+    .spot-detail-map .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
     .map-action-buttons {
       flex-shrink: 0;
       display: grid;
@@ -970,6 +1011,11 @@ const description =
         display: block;
       }
 
+      .spot-detail-map {
+        min-height: 180px;
+        margin-bottom: 14px;
+      }
+
       .section-link {
         width: 100%;
         margin-top: 12px;
@@ -985,6 +1031,47 @@ const description =
       }
     }
   </style>
+
+  {hasLatLng && (
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  )}
+
+  {hasLatLng && (
+    <script is:inline>
+      const spotDetailMapElement = document.getElementById("spot-detail-map");
+
+      if (spotDetailMapElement && typeof L !== "undefined") {
+        const lat = Number(spotDetailMapElement.dataset.lat);
+        const lng = Number(spotDetailMapElement.dataset.lng);
+        const title = spotDetailMapElement.dataset.title || "";
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          const spotDetailMap = L.map(spotDetailMapElement, {
+            scrollWheelZoom: false,
+            zoomControl: false,
+            doubleClickZoom: false,
+          }).setView([lat, lng], 14);
+
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+            attribution: "&copy; OpenStreetMap &copy; CARTO",
+            subdomains: "abcd",
+            maxZoom: 20,
+          }).addTo(spotDetailMap);
+
+          const popupContent = document.createElement("strong");
+          popupContent.textContent = title;
+
+          L.marker([lat, lng])
+            .addTo(spotDetailMap)
+            .bindPopup(popupContent);
+
+          setTimeout(() => {
+            spotDetailMap.invalidateSize();
+          }, 100);
+        }
+      }
+    </script>
+  )}
 
   <script>
     document.querySelectorAll(".reveal-item").forEach((element, index) => {
