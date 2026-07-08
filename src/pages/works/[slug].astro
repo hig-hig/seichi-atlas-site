@@ -63,7 +63,12 @@ function getOfficialLabel(value) {
   return value || "関連度未設定";
 }
 
+function getCardImage(item) {
+  return item.imageUrl || item.image || item.thumbnail || "";
+}
+
 const workSpots = spots.filter((spot) => spot.workSlug === workSlug);
+const workImageSrc = getCardImage(currentWork);
 
 const relatedAreas = areas
   .map((area) => {
@@ -186,6 +191,28 @@ const breadcrumbJsonLd = {
         </div>
 
         <div class="hero-card">
+          <div class="detail-hero-media">
+            {workImageSrc ? (
+              <>
+                <img
+                  src={workImageSrc}
+                  alt={`${workTitle}のイメージ`}
+                  loading="lazy"
+                  onerror="this.hidden = true; this.nextElementSibling.hidden = false;"
+                />
+                <div class="detail-hero-placeholder work-placeholder" aria-label={`${workTitle}の地図風プレースホルダー`} hidden>
+                  <span>WORK MAP</span>
+                  <strong>{workTitle}</strong>
+                </div>
+              </>
+            ) : (
+              <div class="detail-hero-placeholder work-placeholder" aria-label={`${workTitle}の地図風プレースホルダー`}>
+                <span>WORK MAP</span>
+                <strong>{workTitle}</strong>
+              </div>
+            )}
+          </div>
+
           <div class="hero-main">
             <p class="eyebrow">作品から探す</p>
             <h1>{workTitle}の聖地巡礼スポット</h1>
@@ -221,7 +248,7 @@ const breadcrumbJsonLd = {
             </div>
 
             <div class="hero-actions">
-              <a class="primary-button" href={mapPageUrl}>地図で見る</a>
+              <a class="primary-button" href={mapPageUrl}>この作品の聖地を地図で見る</a>
               <a class="secondary-button" href={spotsPageUrl}>スポット一覧で見る</a>
             </div>
           </div>
@@ -479,6 +506,79 @@ const breadcrumbJsonLd = {
     border-radius: var(--radius-large);
     box-shadow: var(--shadow);
     padding: 32px;
+  }
+
+  .detail-hero-media {
+    grid-column: 1 / -1;
+    aspect-ratio: 21 / 8;
+    min-height: 260px;
+    border-radius: 24px;
+    background: var(--card-subtle);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+  }
+
+  .detail-hero-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .detail-hero-media img[hidden],
+  .detail-hero-placeholder[hidden] {
+    display: none !important;
+  }
+
+  .detail-hero-placeholder {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 28px;
+    overflow: hidden;
+    background:
+      linear-gradient(90deg, rgba(14, 165, 233, 0.12) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(14, 165, 233, 0.12) 1px, transparent 1px),
+      radial-gradient(circle at 78% 24%, rgba(14, 165, 233, 0.22), transparent 24%),
+      linear-gradient(135deg, var(--card) 0%, var(--card-subtle) 100%);
+    background-size: 34px 34px, 34px 34px, auto, auto;
+  }
+
+  .detail-hero-placeholder::after {
+    content: "";
+    position: absolute;
+    right: 28px;
+    top: 28px;
+    width: 58px;
+    height: 58px;
+    border: 4px solid var(--accent);
+    border-radius: 50% 50% 50% 0;
+    opacity: 0.24;
+    transform: rotate(-45deg);
+  }
+
+  .detail-hero-placeholder span,
+  .detail-hero-placeholder strong {
+    position: relative;
+    z-index: 1;
+  }
+
+  .detail-hero-placeholder span {
+    color: var(--accent-dark);
+    font-size: 0.78rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+  }
+
+  .detail-hero-placeholder strong {
+    color: var(--text);
+    font-size: clamp(1.8rem, 4vw, 3.2rem);
+    font-weight: 950;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
   }
 
   .eyebrow {
@@ -836,6 +936,16 @@ const breadcrumbJsonLd = {
     .info-card,
     .side-card {
       padding: 22px;
+    }
+
+    .detail-hero-media {
+      aspect-ratio: 16 / 10;
+      min-height: 220px;
+      border-radius: 18px;
+    }
+
+    .detail-hero-placeholder {
+      padding: 20px;
     }
 
     .meta-list,

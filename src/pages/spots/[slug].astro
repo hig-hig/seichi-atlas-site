@@ -60,6 +60,10 @@ function getAreaName(areaItem) {
   return areaItem?.name || areaItem?.prefecture || areaItem?.title || "";
 }
 
+function getCardImage(item) {
+  return item.imageUrl || item.image || item.thumbnail || "";
+}
+
 const work = works.find((item) => item.slug === spot.workSlug);
 const area = areas.find((item) => item.slug === spot.areaSlug);
 
@@ -70,6 +74,8 @@ const areaName = getAreaName(area) || spot.prefecture || "";
 const officialLevel = normalizeOfficialLevel(spot.officialLevel);
 const officialText = officialLabel(officialLevel);
 const tags = normalizeTags(spot.tags);
+const spotImageSrc = getCardImage(spot);
+const spotHeroPlace = spot.station || areaName || spot.prefecture || "地域未登録";
 
 const lat = Number(spot.lat);
 const lng = Number(spot.lng);
@@ -183,6 +189,28 @@ const description =
   <main class="spot-detail-page">
 
     <section class="spot-hero reveal-item">
+      <div class="detail-hero-media">
+        {spotImageSrc ? (
+          <>
+            <img
+              src={spotImageSrc}
+              alt={`${spotName}のイメージ`}
+              loading="lazy"
+              onerror="this.hidden = true; this.nextElementSibling.hidden = false;"
+            />
+            <div class="detail-hero-placeholder spot-placeholder" aria-label={`${spotName}の地図風プレースホルダー`} hidden>
+              <span class="placeholder-pin"></span>
+              <strong>{spotHeroPlace}</strong>
+            </div>
+          </>
+        ) : (
+          <div class="detail-hero-placeholder spot-placeholder" aria-label={`${spotName}の地図風プレースホルダー`}>
+            <span class="placeholder-pin"></span>
+            <strong>{spotHeroPlace}</strong>
+          </div>
+        )}
+      </div>
+
       <div>
         <div class="section-kicker">SPOT DETAIL</div>
 
@@ -473,6 +501,68 @@ const description =
       background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
       border: 1px solid var(--border-soft);
       box-shadow: var(--shadow);
+    }
+
+    .detail-hero-media {
+      grid-column: 1 / -1;
+      aspect-ratio: 21 / 8;
+      min-height: 260px;
+      border-radius: 24px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+
+    .detail-hero-media img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .detail-hero-media img[hidden],
+    .detail-hero-placeholder[hidden] {
+      display: none !important;
+    }
+
+    .detail-hero-placeholder {
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 28px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px),
+        radial-gradient(circle at 28% 30%, rgba(22, 163, 74, 0.18), transparent 24%),
+        linear-gradient(135deg, var(--card) 0%, var(--card-subtle) 100%);
+      background-size: 34px 34px, 34px 34px, auto, auto;
+    }
+
+    .placeholder-pin {
+      width: 58px;
+      height: 58px;
+      border: 5px solid #ffffff;
+      border-radius: 50% 50% 50% 0;
+      background: var(--accent);
+      box-shadow: 0 12px 26px rgba(14, 165, 233, 0.24);
+      transform: rotate(-45deg);
+    }
+
+    .detail-hero-placeholder strong {
+      position: relative;
+      z-index: 1;
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--accent-dark);
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 950;
+      line-height: 1.2;
     }
 
     .spot-hero h1 {
@@ -859,6 +949,16 @@ const description =
       .spot-hero {
         padding: 22px;
         border-radius: 24px;
+      }
+
+      .detail-hero-media {
+        aspect-ratio: 16 / 10;
+        min-height: 220px;
+        border-radius: 18px;
+      }
+
+      .detail-hero-placeholder {
+        padding: 20px;
       }
 
       .spot-hero h1 {

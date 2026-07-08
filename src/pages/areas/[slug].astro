@@ -34,6 +34,10 @@ function getAreaName(areaItem) {
   return areaItem.name || areaItem.prefecture || areaItem.title || "地域未登録";
 }
 
+function getCardImage(item) {
+  return item.imageUrl || item.image || item.thumbnail || "";
+}
+
 function normalizeOfficialLevel(level) {
   if (level === "official") return "official";
   if (level === "tourism") return "tourism";
@@ -47,6 +51,7 @@ function officialLabel(level) {
 }
 
 const areaName = getAreaName(area);
+const areaImageSrc = getCardImage(area);
 
 const areaSpots = spots
   .filter((spot) => spot.areaSlug === area.slug || spot.prefecture === areaName)
@@ -170,6 +175,28 @@ const breadcrumbJsonLd = {
   <main class="area-detail-page">
 
     <section class="area-hero reveal-item">
+      <div class="detail-hero-media">
+        {areaImageSrc ? (
+          <>
+            <img
+              src={areaImageSrc}
+              alt={`${areaName}のイメージ`}
+              loading="lazy"
+              onerror="this.hidden = true; this.nextElementSibling.hidden = false;"
+            />
+            <div class="detail-hero-placeholder area-placeholder" aria-label={`${areaName}のエリア風プレースホルダー`} hidden>
+              <span>AREA GUIDE</span>
+              <strong>{areaName}</strong>
+            </div>
+          </>
+        ) : (
+          <div class="detail-hero-placeholder area-placeholder" aria-label={`${areaName}のエリア風プレースホルダー`}>
+            <span>AREA GUIDE</span>
+            <strong>{areaName}</strong>
+          </div>
+        )}
+      </div>
+
       <div>
         <div class="section-kicker">AREA GUIDE</div>
 
@@ -180,7 +207,7 @@ const breadcrumbJsonLd = {
         </p>
 
         <div class="hero-actions">
-          <a class="button-primary" href={`/map/?area=${area.slug}`}>地図で探す</a>
+          <a class="button-primary" href={`/map/?area=${area.slug}`}>この地域の聖地を地図で見る</a>
           <a class="button-secondary" href={`/spots/?area=${area.slug}`}>スポット一覧で探す</a>
         </div>
       </div>
@@ -411,6 +438,88 @@ const breadcrumbJsonLd = {
       box-shadow: var(--shadow);
     }
 
+    .detail-hero-media {
+      grid-column: 1 / -1;
+      aspect-ratio: 21 / 8;
+      min-height: 260px;
+      border-radius: 24px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+
+    .detail-hero-media img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .detail-hero-media img[hidden],
+    .detail-hero-placeholder[hidden] {
+      display: none !important;
+    }
+
+    .detail-hero-placeholder {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 28px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 24%, rgba(14, 165, 233, 0.18), transparent 22%),
+        radial-gradient(circle at 78% 66%, rgba(22, 163, 74, 0.15), transparent 24%),
+        linear-gradient(135deg, var(--card) 0%, var(--card-subtle) 100%);
+    }
+
+    .detail-hero-placeholder::before,
+    .detail-hero-placeholder::after {
+      content: "";
+      position: absolute;
+      border: 2px solid rgba(14, 165, 233, 0.18);
+      border-radius: 48% 52% 44% 56%;
+    }
+
+    .detail-hero-placeholder::before {
+      width: 220px;
+      height: 104px;
+      right: -32px;
+      top: 28px;
+      transform: rotate(-16deg);
+    }
+
+    .detail-hero-placeholder::after {
+      width: 260px;
+      height: 122px;
+      left: -48px;
+      bottom: 22px;
+      transform: rotate(18deg);
+    }
+
+    .detail-hero-placeholder span,
+    .detail-hero-placeholder strong {
+      position: relative;
+      z-index: 1;
+    }
+
+    .detail-hero-placeholder span {
+      color: var(--accent-dark);
+      font-size: 0.78rem;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+    }
+
+    .detail-hero-placeholder strong {
+      color: var(--text);
+      font-size: clamp(1.8rem, 4vw, 3.2rem);
+      font-weight: 950;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+    }
+
     .area-hero h1 {
       margin: 8px 0 12px;
       color: var(--text);
@@ -622,6 +731,10 @@ const breadcrumbJsonLd = {
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
+    .featured-spot-card .spot-card-main {
+      min-height: 100%;
+    }
+
     .featured-spot-card.level-official {
       border-left-color: var(--accent);
     }
@@ -741,6 +854,7 @@ const breadcrumbJsonLd = {
     .spot-actions {
       margin-top: auto;
       padding-top: 16px;
+      justify-content: space-between;
     }
 
     .spot-button {
@@ -884,6 +998,16 @@ const breadcrumbJsonLd = {
       .area-hero {
         padding: 22px;
         border-radius: 24px;
+      }
+
+      .detail-hero-media {
+        aspect-ratio: 16 / 10;
+        min-height: 220px;
+        border-radius: 18px;
+      }
+
+      .detail-hero-placeholder {
+        padding: 20px;
       }
 
       .area-hero h1 {
