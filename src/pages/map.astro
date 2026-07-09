@@ -38,7 +38,7 @@ function officialLabel(level) {
   }
 
   if (level === "tourism") {
-    return "観光協会・自治体";
+    return "観光協会";
   }
 
   return "ファン考察";
@@ -50,7 +50,6 @@ const mapSpots = spots
     const lat = Number(spot.lat);
     const lng = Number(spot.lng);
     const officialLevel = normalizeOfficialLevel(spot.officialLevel);
-    const tags = normalizeTags(spot.tags);
 
     return {
       id: String(spot.id || index + 1),
@@ -65,564 +64,617 @@ const mapSpots = spots
       lng,
       officialLevel,
       officialLabel: officialLabel(officialLevel),
-      description: spot.description || "",
-      access: spot.access || spot.address || "",
-      note: spot.note || "",
-      tags,
+      tags: normalizeTags(spot.tags),
     };
   })
   .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng));
 
 const workOptions = [
-  ...new Set(
-    mapSpots
-      .map((spot) => spot.work)
-      .filter(Boolean)
-  ),
+  ...new Set(mapSpots.map((spot) => spot.work).filter(Boolean)),
 ];
 
 const prefectureOptions = [
-  ...new Set(
-    mapSpots
-      .map((spot) => spot.prefecture)
-      .filter(Boolean)
-  ),
-];
-
-const tagOptions = [
-  ...new Set(
-    mapSpots
-      .flatMap((spot) => spot.tags)
-      .filter(Boolean)
-  ),
+  ...new Set(mapSpots.map((spot) => spot.prefecture).filter(Boolean)),
 ];
 
 const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
 ---
 
 <BaseLayout title={title} description={description} canonical="/map/">
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
   <main class="map-page">
+    <section class="map-shell" aria-label="聖地マップ">
+      <div class="map-stage">
+        <div id="map" aria-label="聖地スポット地図"></div>
 
-    <section class="map-hero reveal-item">
-      <div>
-        <div class="section-kicker">MAP</div>
-
-        <h1>マップから探す</h1>
-
-        <p>
-          作品をまたいで、聖地巡礼スポットを地図上で探せます。
-          ピンやスポットカードを選ぶと、場所の概要や詳細ページを確認できます。
-        </p>
-      </div>
-
-      <div class="map-hero-stats">
-        <div class="map-stat-card">
-          <span>地図表示スポット</span>
-          <strong class="count-up" data-count={mapSpots.length}>0</strong>
-        </div>
-
-        <div class="map-stat-card">
-          <span>作品</span>
-          <strong class="count-up" data-count={workOptions.length}>0</strong>
-        </div>
-
-        <div class="map-stat-card">
-          <span>地域</span>
-          <strong class="count-up" data-count={prefectureOptions.length}>0</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="map-filter-card reveal-item">
-      <div class="map-filter-head">
-        <div>
-          <div class="section-kicker">FILTER</div>
-          <h2>条件で絞り込む</h2>
-        </div>
-
-        <button class="filter-reset-button" type="button" id="filter-reset">
-          条件をリセット
+        <button class="filter-panel-toggle" type="button" id="filter-panel-toggle" aria-expanded="false" aria-controls="map-filter-panel">
+          <span aria-hidden="true">⌕</span>
+          検索条件
         </button>
-      </div>
 
-      <div class="map-filter-grid">
-        <label class="filter-field">
-          <span>キーワード</span>
-          <input
-            id="map-search"
-            class="filter-input"
-            type="search"
-            placeholder="スポット名・作品名・駅名・都道府県"
-            autocomplete="off"
-          />
-        </label>
+        <aside class="map-filter-panel" id="map-filter-panel" aria-label="スポット絞り込み">
+          <div class="panel-head">
+            <div class="map-title">
+              <p>MAP</p>
+              <h1>地図検索</h1>
+            </div>
 
-        <label class="filter-field">
-          <span>作品</span>
-          <select id="work-filter" class="filter-select">
-            <option value="all">すべて</option>
-            {workOptions.map((workName) => (
-              <option value={workName}>{workName}</option>
-            ))}
-          </select>
-        </label>
-
-        <label class="filter-field">
-          <span>都道府県</span>
-          <select id="prefecture-filter" class="filter-select">
-            <option value="all">すべて</option>
-            {prefectureOptions.map((prefecture) => (
-              <option value={prefecture}>{prefecture}</option>
-            ))}
-          </select>
-        </label>
-
-        <label class="filter-field">
-          <span>関連度</span>
-          <select id="official-filter" class="filter-select">
-            <option value="all">すべて</option>
-            <option value="official">公式</option>
-            <option value="tourism">観光協会・自治体</option>
-            <option value="fan">ファン考察</option>
-          </select>
-        </label>
-      </div>
-
-      {tagOptions.length > 0 && (
-        <div class="tag-filter-section">
-          <div class="tag-filter-head">
-            <span>タグ</span>
-            <small>スポットに登録されたタグで絞り込みます</small>
+            <button class="panel-close" type="button" id="filter-panel-close" aria-label="絞り込みを閉じる">×</button>
           </div>
 
-          <div class="tag-filter-list">
-            <button class="tag-filter-chip active" type="button" data-tag="all">
-              #すべて
-            </button>
+          <div class="filter-bar">
+            <label class="filter-field keyword-field">
+              <span>Search</span>
+              <input
+                id="map-search"
+                type="search"
+                placeholder="スポット名・作品名・地域"
+                autocomplete="off"
+              />
+            </label>
 
-            {tagOptions.map((tag) => (
-              <button class="tag-filter-chip" type="button" data-tag={tag}>
-                #{tag}
+            <div class="filter-menu" data-popover-root>
+              <button class="filter-trigger" type="button" data-popover-trigger="work">
+                <span>作品</span>
+                <strong id="work-filter-label">すべて</strong>
               </button>
-            ))}
+              <div class="filter-popover" id="work-popover" hidden>
+                <button class="filter-option active" type="button" data-filter-option="work" data-value="all">すべて</button>
+                {workOptions.map((workName) => (
+                  <button class="filter-option" type="button" data-filter-option="work" data-value={workName}>
+                    {workName}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div class="filter-menu" data-popover-root>
+              <button class="filter-trigger" type="button" data-popover-trigger="prefecture">
+                <span>地域</span>
+                <strong id="prefecture-filter-label">すべて</strong>
+              </button>
+              <div class="filter-popover" id="prefecture-popover" hidden>
+                <button class="filter-option active" type="button" data-filter-option="prefecture" data-value="all">すべて</button>
+                {prefectureOptions.map((prefecture) => (
+                  <button class="filter-option" type="button" data-filter-option="prefecture" data-value={prefecture}>
+                    {prefecture}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label class="filter-field station-field">
+              <span>駅</span>
+              <input
+                id="station-search"
+                type="search"
+                placeholder="最寄駅"
+                autocomplete="off"
+              />
+            </label>
+
+            <div class="filter-menu" data-popover-root>
+              <button class="filter-trigger" type="button" data-popover-trigger="official">
+                <span>関連</span>
+                <strong id="official-filter-label">すべて</strong>
+              </button>
+              <div class="filter-popover" id="official-popover" hidden>
+                <button class="filter-option active" type="button" data-filter-option="official" data-value="all">すべて</button>
+                <button class="filter-option" type="button" data-filter-option="official" data-value="official">公式</button>
+                <button class="filter-option" type="button" data-filter-option="official" data-value="tourism">観光協会</button>
+                <button class="filter-option" type="button" data-filter-option="official" data-value="fan">ファン考察</button>
+              </div>
+            </div>
+
+            <button class="reset-button" type="button" id="filter-reset">リセット</button>
+          </div>
+
+          <div class="panel-railway-row">
+            <button class="railway-toggle" type="button" id="railway-toggle" aria-pressed="false">
+              路線
+            </button>
+          </div>
+        </aside>
+
+        <div class="map-toolbar" aria-label="地図表示設定">
+          <div class="tile-switch" role="group" aria-label="地図表示">
+            <button class="tile-button active" type="button" data-map-style="light">淡色</button>
+            <button class="tile-button" type="button" data-map-style="standard">標準</button>
+            <button class="tile-button" type="button" data-map-style="black">黒</button>
           </div>
         </div>
-      )}
-    </section>
 
-    <section class="map-layout reveal-item">
-
-      <div class="map-card">
-        <div class="map-card-head">
-          <div>
-            <div class="section-kicker">EXPLORE</div>
-            <h2>聖地マップ</h2>
-            <p>
-              ピンをクリックするとスポット情報を表示します。
-              右側のカードをクリックすると、その地点へ移動します。
-            </p>
-          </div>
+        <div class="map-result-pill" id="result-count">
+          {mapSpots.length}件
         </div>
 
-        <div class="map-wrap">
-        <div id="map"></div>
-
-        <button class="map-reset-view-button" type="button" id="map-reset-view">
-            全体地図に戻る
+        <button class="fit-button" type="button" id="fit-visible-button">
+          全体表示
         </button>
 
         <div class="map-empty-overlay" id="map-empty-overlay" hidden>
-            <div class="map-empty-box">
-              <h3>表示できるスポットがありません</h3>
-              <p>検索条件を変更するか、条件をリセットしてください。</p>
-              <button type="button" id="empty-reset">条件をリセット</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="map-summary muted" id="map-summary">
-          すべてのスポットを表示中
-        </div>
-
-        <div class="map-legend">
-          <div class="map-legend-item">
-            <span class="legend-dot official"></span>
-            <span>公式</span>
-          </div>
-
-          <div class="map-legend-item">
-            <span class="legend-dot tourism"></span>
-            <span>観光協会・自治体</span>
-          </div>
-
-          <div class="map-legend-item">
-            <span class="legend-dot fan"></span>
-            <span>ファン考察</span>
-          </div>
-        </div>
-      </div>
-
-      <aside class="spot-side-panel">
-        <div class="spot-side-head">
           <div>
-            <div class="section-kicker">SPOTS</div>
-            <h2>スポット一覧</h2>
+            <h2>該当なし</h2>
+            <p>条件を変えてください。</p>
           </div>
-
-          <p id="result-count">
-            {mapSpots.length}件のスポットを表示中
-          </p>
         </div>
 
-        <div id="spot-list"></div>
-      </aside>
-
+        <article class="selected-card" id="selected-card" hidden>
+          <button class="selected-close" type="button" id="selected-close" aria-label="選択を閉じる">×</button>
+          <h2 id="selected-name"></h2>
+          <p id="selected-work"></p>
+          <dl>
+            <div>
+              <dt>都道府県</dt>
+              <dd id="selected-prefecture"></dd>
+            </div>
+            <div>
+              <dt>最寄駅</dt>
+              <dd id="selected-station"></dd>
+            </div>
+          </dl>
+          <a class="selected-link" id="selected-link" href="/spots/">詳細を見る</a>
+        </article>
+      </div>
     </section>
-
-    <div id="modal-root"></div>
 
     <script type="application/json" id="map-data" set:html={mapSpotsJson}></script>
   </main>
 
-    <style is:global>
+  <style is:global>
     .map-page {
-      width: calc(100% - 32px);
-      max-width: 1680px;
+      width: calc(100% - 24px);
+      max-width: 1920px;
       margin: 0 auto;
-      padding: 44px 0 72px;
+      padding: 14px 0 24px;
     }
 
-    .section-kicker {
+    .map-shell {
+      display: grid;
+      min-height: calc(100vh - 120px);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .map-title {
+      min-width: 0;
+    }
+
+    .map-title p {
+      margin: 0;
       color: var(--accent-dark);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 950;
       letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
 
-    .map-hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-      gap: 24px;
-      align-items: stretch;
-      margin-bottom: 22px;
-      padding: 30px;
-      border-radius: var(--radius-large);
-      background: linear-gradient(135deg, #ffffff 0%, var(--card-subtle) 100%);
-      border: 1px solid var(--border-soft);
-      box-shadow: var(--shadow);
-    }
-
-    .map-hero h1 {
-      margin: 8px 0 12px;
+    .map-title h1 {
+      margin: 2px 0 0;
       color: var(--text);
-      font-size: clamp(34px, 5vw, 54px);
-      line-height: 1.12;
-      letter-spacing: -0.05em;
-    }
-
-    .map-hero p {
-      max-width: 720px;
-      margin: 0;
-      color: var(--sub);
-      font-size: 15px;
-      font-weight: 750;
-      line-height: 1.8;
-    }
-
-    .map-hero-stats {
-      display: grid;
-      gap: 12px;
-    }
-
-    .map-stat-card {
-      padding: 20px;
-      border-radius: 22px;
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-      transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
-    }
-
-    .map-stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-strong);
-    }
-
-    .map-stat-card span {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    .map-stat-card strong {
-      display: block;
-      color: var(--text);
-      font-size: 36px;
-      font-weight: 950;
-      line-height: 1;
-      letter-spacing: -0.04em;
-    }
-
-    .map-filter-card {
-      margin-bottom: 18px;
-      padding: 22px;
-      border-radius: var(--radius-card);
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      box-shadow: var(--shadow);
-    }
-
-    .map-filter-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .map-filter-head h2 {
-      margin: 4px 0 0;
-      padding: 0;
-      border: none;
-      color: var(--text);
-      font-size: 24px;
+      font-size: 22px;
+      line-height: 1.25;
       letter-spacing: -0.03em;
     }
 
-    .filter-reset-button {
-      min-height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 8px 14px;
-      background: #ffffff;
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 850;
-      cursor: pointer;
-      transition:
-        transform 0.18s ease,
-        background 0.18s ease,
-        color 0.18s ease;
+    .filter-bar {
+      display: grid;
+      gap: 10px;
     }
 
-    .filter-reset-button:hover {
-      transform: translateY(-1px);
+    .filter-field,
+    .filter-trigger {
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      min-height: 44px;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
       background: var(--card-subtle);
-      color: var(--text);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
     }
 
-    .map-filter-grid {
-      display: grid;
-      grid-template-columns: 1.5fr repeat(3, 1fr);
-      gap: 12px;
-      align-items: end;
-    }
-
-    .filter-field {
-      display: grid;
-      gap: 7px;
-    }
-
-    .filter-field span {
-      color: var(--muted);
-      font-size: 12px;
+    .filter-field span,
+    .filter-trigger span {
+      flex: 0 0 auto;
+      padding-left: 13px;
+      color: var(--accent-dark);
+      font-size: 10px;
       font-weight: 950;
       letter-spacing: 0.04em;
     }
 
-    .filter-input,
-    .filter-select {
+    .filter-field input {
       width: 100%;
+      min-width: 0;
       min-height: 42px;
-      padding: 10px 12px;
+      border: 0;
       border-radius: 14px;
-      border: 1px solid var(--border);
-      background: #ffffff;
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 750;
+      padding: 8px 12px 8px 8px;
       outline: none;
-      transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 750;
     }
 
-    .filter-input:focus,
-    .filter-select:focus {
+    .filter-trigger {
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 11px 0 0;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .filter-trigger strong {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 850;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .filter-trigger::after {
+      content: "";
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: translateY(-2px) rotate(45deg);
+    }
+
+    .filter-field:focus-within,
+    .filter-menu.open .filter-trigger {
       border-color: var(--accent);
+      background: #ffffff;
       box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
     }
 
-    .tag-filter-section {
-      margin-top: 18px;
-      padding-top: 16px;
+    .keyword-field {
+      min-height: 48px;
+      background: #ffffff;
+      border-color: rgba(14, 165, 233, 0.32);
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.04);
+    }
+
+    .keyword-field input {
+      min-height: 46px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .filter-menu {
+      position: relative;
+      min-width: 0;
+    }
+
+    .filter-popover {
+      position: absolute;
+      z-index: 900;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 100%;
+      min-width: 240px;
+      max-height: 330px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+    }
+
+    .filter-menu:nth-last-of-type(-n+2) .filter-popover {
+      right: auto;
+      left: 0;
+    }
+
+    .filter-popover[hidden] {
+      display: none;
+    }
+
+    .filter-option {
+      width: 100%;
+      min-height: 36px;
+      border: 0;
+      border-radius: 11px;
+      padding: 8px 10px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: left;
+    }
+
+    .filter-option:hover,
+    .filter-option.active {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .reset-button,
+    .fit-button,
+    .tile-button,
+    .railway-toggle {
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .reset-button:hover,
+    .fit-button:hover,
+    .tile-button:hover,
+    .railway-toggle:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-soft);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .reset-button {
+      min-height: 40px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+      padding-inline: 10px;
+      justify-self: start;
+    }
+
+    .map-toolbar {
+      position: absolute;
+      z-index: 660;
+      top: 14px;
+      right: 14px;
+    }
+
+    .tile-switch {
+      display: inline-flex;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      background: var(--card-subtle);
+    }
+
+    .tile-button {
+      min-height: 32px;
+      border-color: transparent;
+      padding: 7px 11px;
+      background: transparent;
+      color: var(--sub);
+    }
+
+    .tile-button.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(14, 165, 233, 0.22);
+    }
+
+    .railway-toggle {
+      position: relative;
+      min-height: 36px;
+      border-color: var(--border-soft);
+      padding: 7px 12px 7px 30px;
+      background: var(--card-subtle);
+      color: var(--sub);
+    }
+
+    .railway-toggle::before {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      transform: translateY(-50%);
+      box-shadow: inset 0 0 0 2px #ffffff;
+    }
+
+    .railway-toggle.active {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .railway-toggle.active::before {
+      background: var(--accent);
+    }
+
+    .map-stage {
+      position: relative;
+      height: calc(100vh - 128px);
+      min-height: 640px;
+      overflow: hidden;
+      border: 1px solid var(--border-soft);
+      border-radius: 24px;
+      background: #dbeafe;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.11);
+    }
+
+    .filter-panel-toggle {
+      position: absolute;
+      z-index: 720;
+      top: 18px;
+      left: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 0 16px 0 12px;
+      background: rgba(255, 255, 255, 0.97);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .filter-panel-toggle span {
+      display: inline-grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .filter-panel-toggle:hover {
+      transform: translateY(-1px);
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(14, 165, 233, 0.24);
+    }
+
+    .filter-panel-toggle:hover span {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .filter-panel-toggle.has-active-filter::after {
+      content: "";
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 8px;
+      height: 8px;
+      border: 2px solid #ffffff;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 4px 10px rgba(14, 165, 233, 0.32);
+    }
+
+    .map-stage.filter-open .filter-panel-toggle {
+      transform: translateX(318px);
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(14, 165, 233, 0.24);
+    }
+
+    .map-stage.filter-open .filter-panel-toggle span {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .map-filter-panel {
+      position: absolute;
+      z-index: 710;
+      top: 14px;
+      bottom: 14px;
+      left: 14px;
+      width: 320px;
+      max-width: calc(100% - 28px);
+      overflow: visible;
+      padding: 20px;
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+      backdrop-filter: blur(16px);
+      transform: translateX(calc(-100% - 28px));
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .map-stage.filter-open .map-filter-panel {
+      transform: translateX(0);
+    }
+
+    .panel-close {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--sub);
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .panel-railway-row {
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid var(--border-soft);
     }
 
-    .tag-filter-head {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .tag-filter-head span {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 950;
-    }
-
-    .tag-filter-head small {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 750;
-    }
-
-    .tag-filter-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .tag-filter-chip {
-      border: none;
-      border-radius: 999px;
-      padding: 8px 12px;
-      background: var(--card-subtle);
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 850;
-      cursor: pointer;
-      transition:
-        transform 0.18s ease,
-        background 0.18s ease,
-        color 0.18s ease,
-        box-shadow 0.18s ease;
-    }
-
-    .tag-filter-chip:hover {
-      transform: translateY(-1px);
-      background: #e8eef6;
-      color: var(--text);
-    }
-
-    .tag-filter-chip.active {
-      background: var(--accent);
-      color: #ffffff;
-      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.22);
-      animation: chipPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .map-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.7fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .map-card,
-    .spot-side-panel {
-      border-radius: var(--radius-large);
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      box-shadow: var(--shadow);
-    }
-
-    .map-card {
-      padding: 20px;
-    }
-
-    .map-card-head {
-      margin-bottom: 16px;
-    }
-
-    .map-card-head h2 {
-      margin: 4px 0 6px;
-      padding: 0;
-      border: none;
-      color: var(--text);
-      font-size: 26px;
-      letter-spacing: -0.03em;
-    }
-
-    .map-card-head p {
-      margin: 0;
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 750;
-      line-height: 1.7;
-    }
-
-    .map-wrap {
-      position: relative;
+    .map-stage.map-dark {
+      background: #020617;
+      border-color: #1e293b;
     }
 
     #map {
+      position: absolute;
+      inset: 0;
       width: 100%;
-      height: 620px;
-      min-height: 620px;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #eef2f7;
-      box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.35),
-        0 16px 36px rgba(15, 23, 42, 0.08);
+      height: 100%;
+      min-height: 0;
+      background: #e2e8f0;
     }
 
-    .map-reset-view-button {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    z-index: 700;
-    min-height: 38px;
-    border: 1px solid var(--border-soft);
-    border-radius: 999px;
-    padding: 8px 13px;
-    background: rgba(255, 255, 255, 0.94);
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 950;
-    cursor: pointer;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
-    backdrop-filter: blur(10px);
-    transition:
-        transform 0.18s ease,
-        background 0.18s ease,
-        color 0.18s ease,
-        box-shadow 0.18s ease;
+    .map-result-pill,
+    .fit-button {
+      position: absolute;
+      z-index: 650;
     }
 
-    .map-reset-view-button:hover {
-    transform: translateY(-1px);
-    background: var(--accent);
-    color: #ffffff;
-    box-shadow: 0 14px 30px rgba(14, 165, 233, 0.24);
+    .map-result-pill {
+      top: 72px;
+      left: 18px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 13px;
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 950;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(10px);
     }
 
-    .map-reset-view-button:active {
-    transform: translateY(0);
+    .fit-button {
+      right: 14px;
+      top: 62px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(10px);
     }
 
     .map-empty-overlay {
       position: absolute;
+      z-index: 640;
       inset: 0;
-      z-index: 650;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      display: grid;
+      place-items: center;
       pointer-events: none;
     }
 
@@ -630,757 +682,282 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       display: none;
     }
 
-    .map-empty-box {
-      max-width: 360px;
-      padding: 22px;
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.94);
+    .map-empty-overlay > div {
+      padding: 18px 22px;
       border: 1px solid var(--border-soft);
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.92);
       text-align: center;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
       backdrop-filter: blur(10px);
-      pointer-events: auto;
-      animation: emptyStateIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .map-empty-box h3 {
-      margin: 0 0 8px;
+    .map-empty-overlay h2 {
+      margin: 0 0 4px;
+      border: 0;
+      padding: 0;
       color: var(--text);
       font-size: 18px;
     }
 
-    .map-empty-box p {
-      margin: 0 0 14px;
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 750;
-      line-height: 1.6;
-    }
-
-    .map-empty-box button {
-      min-height: 36px;
-      border: none;
-      border-radius: 999px;
-      padding: 8px 13px;
-      background: var(--accent);
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .map-summary {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: 18px;
-      background: var(--card-subtle);
-      border: 1px solid var(--border-soft);
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    .map-summary.muted {
-      color: var(--muted);
-    }
-
-    .summary-label {
-      color: var(--accent-dark);
-      font-weight: 950;
-    }
-
-    .summary-pill {
-      display: inline-flex;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      color: var(--sub);
-      font-size: 12px;
-      font-weight: 850;
-    }
-
-    .map-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 18px;
-      background: var(--card-subtle);
-      border: 1px solid var(--border-soft);
-    }
-
-    .map-legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--sub);
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    .legend-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      display: inline-block;
-      background: #64748b;
-      border: 3px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
-    }
-
-    .legend-dot.official {
-      background: var(--accent);
-    }
-
-    .legend-dot.tourism {
-      background: var(--visited);
-    }
-
-    .legend-dot.fan {
-      background: var(--sub);
-    }
-
-    .spot-side-panel {
-      position: sticky;
-      top: 90px;
-      max-height: 820px;
-      display: flex;
-      flex-direction: column;
-      padding: 18px;
-      overflow: hidden;
-    }
-
-    .spot-side-head {
-      flex-shrink: 0;
-      margin-bottom: 12px;
-    }
-
-    .spot-side-head h2 {
-      margin: 4px 0 4px;
-      padding: 0;
-      border: none;
-      color: var(--text);
-      font-size: 22px;
-      letter-spacing: -0.03em;
-    }
-
-    .spot-side-head p {
+    .map-empty-overlay p {
       margin: 0;
       color: var(--sub);
       font-size: 13px;
       font-weight: 750;
     }
 
-    #spot-list {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      display: grid;
-      gap: 12px;
-      padding-right: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: #cbd5e1 transparent;
-    }
-
-    #spot-list::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    #spot-list::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 999px;
-    }
-
-    .spot-card {
-      border-left: 5px solid var(--sub);
-      border-radius: 20px;
-      background: #ffffff;
-      border-top: 1px solid var(--border-soft);
-      border-right: 1px solid var(--border-soft);
-      border-bottom: 1px solid var(--border-soft);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-      cursor: pointer;
-      animation: cardIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-      transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease,
-        background 0.2s ease;
-    }
-
-    .spot-card.level-official {
-      border-left-color: var(--accent);
-    }
-
-    .spot-card.level-tourism {
-      border-left-color: var(--visited);
-    }
-
-    .spot-card.level-fan {
-      border-left-color: var(--sub);
-    }
-
-    .spot-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-strong);
-    }
-
-    .spot-card.active {
-      border-color: var(--accent);
-      background: linear-gradient(180deg, #ffffff 0%, var(--accent-soft) 100%);
-      box-shadow:
-        0 0 0 3px rgba(14, 165, 233, 0.16),
-        var(--shadow-strong);
-      animation: activeCard 0.34s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .spot-card-main {
-      padding: 18px;
-    }
-
-    .spot-card-title {
-      color: var(--text);
-      font-size: 17px;
-      font-weight: 950;
-      line-height: 1.45;
-      letter-spacing: -0.01em;
-    }
-
-    .spot-meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .spot-meta-row span {
-      display: inline-flex;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: var(--card-subtle);
-      color: var(--sub);
-      font-size: 12px;
-      font-weight: 750;
-    }
-
-    .level-pill {
-      display: inline-flex;
-      width: fit-content;
-      margin-top: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 950;
-    }
-
-    .level-pill.level-official {
-      background: var(--accent-soft);
-      color: var(--accent-dark);
-    }
-
-    .level-pill.level-tourism {
-      background: var(--visited-soft);
-      color: var(--visited-dark);
-    }
-
-    .level-pill.level-fan {
-      background: var(--card-subtle);
-      color: var(--sub);
-    }
-
-    .spot-card-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    .spot-button {
-      min-height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px 12px;
-      background: var(--card-subtle);
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 900;
-      text-decoration: none;
-      cursor: pointer;
-      transition:
-        transform 0.16s ease,
-        background 0.16s ease,
-        color 0.16s ease;
-    }
-
-    .spot-button:hover {
-      transform: translateY(-1px);
-      background: var(--accent-soft);
-      color: var(--accent-dark);
-    }
-
-    .empty-list-card {
-      padding: 34px 22px;
-      border-radius: 24px;
-      background: #ffffff;
-      border: 1px solid var(--border-soft);
-      text-align: center;
-      color: var(--sub);
-    }
-
-    .custom-pin-wrap {
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .custom-pin {
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      background: var(--sub);
-      border: 3px solid #ffffff;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
-      transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        background 0.18s ease;
-    }
-
-    .custom-pin.level-official {
-      background: var(--accent);
-    }
-
-    .custom-pin.level-tourism {
-      background: var(--visited);
-    }
-
-    .custom-pin.level-fan {
-      background: var(--sub);
-    }
-
-    .custom-pin.active {
-      transform: scale(1.45);
-      background: var(--accent);
-      box-shadow:
-        0 0 0 5px rgba(14, 165, 233, 0.28),
-        0 0 0 10px rgba(14, 165, 233, 0.10),
-        0 16px 34px rgba(15, 23, 42, 0.34);
-      animation: pinPop 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .leaflet-marker-icon {
-      animation: markerDropIn 0.34s cubic-bezier(0.16, 1, 0.3, 1);
-      transform-origin: center bottom;
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 18px;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
-      padding: 2px;
-    }
-
-    .leaflet-popup-content {
-      margin: 14px 16px;
-      min-width: 210px;
-    }
-
-    .popup-title {
-      margin-bottom: 8px;
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 950;
-      line-height: 1.45;
-    }
-
-    .popup-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
-    .popup-meta span {
-      display: inline-flex;
-      padding: 4px 7px;
-      border-radius: 999px;
-      background: var(--card-subtle);
-      color: var(--sub);
-      font-size: 11px;
-      font-weight: 850;
-    }
-
-    .popup-level {
-      display: inline-flex;
-      margin-bottom: 10px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 950;
-    }
-
-    .popup-level.level-official {
-      background: var(--accent-soft);
-      color: var(--accent-dark);
-    }
-
-    .popup-level.level-tourism {
-      background: var(--visited-soft);
-      color: var(--visited-dark);
-    }
-
-    .popup-level.level-fan {
-      background: var(--card-subtle);
-      color: var(--sub);
-    }
-
-    .popup-actions {
-      display: grid;
-      gap: 8px;
-    }
-
-    .popup-button {
-      min-height: 34px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px 9px;
-      background: var(--card-subtle);
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .selected-card {
+      position: absolute;
+      z-index: 700;
+      left: 18px;
+      bottom: 18px;
+      width: min(360px, calc(100% - 36px));
       padding: 20px;
-      background: rgba(15, 23, 42, 0.42);
-      backdrop-filter: blur(10px);
-      animation: modalOverlayFadeIn 0.22s ease-out;
+      border: 1px solid var(--border-soft);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(14px);
+      animation: selectedCardIn 0.22s ease-out;
     }
 
-    .modal-card {
-      width: 100%;
-      max-width: 560px;
-      max-height: 86vh;
-      overflow-y: auto;
-      padding: 24px;
-      border-radius: var(--radius-card);
+    .selected-card[hidden] {
+      display: none;
+    }
+
+    .selected-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
       background: #ffffff;
-      box-shadow: 0 28px 80px rgba(15, 23, 42, 0.26);
-      animation: modalCardPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      color: var(--sub);
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
     }
 
-    .modal-header {
+    .selected-card h2 {
+      margin: 0;
+      padding: 0 34px 0 0;
+      border: 0;
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1.45;
+      letter-spacing: -0.02em;
+    }
+
+    .selected-card p {
+      margin: 6px 0 14px;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .selected-card dl {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .selected-card dl div {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      margin-bottom: 16px;
+      gap: 14px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-soft);
     }
 
-    .modal-title {
-      color: var(--text);
-      font-size: 22px;
-      font-weight: 950;
-      line-height: 1.45;
-    }
-
-    .modal-sub {
-      margin: 4px 0 0;
-      color: var(--sub);
-      font-size: 14px;
-      font-weight: 750;
-    }
-
-    .modal-close {
-      min-height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #ffffff;
-      color: var(--text);
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .modal-info {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .modal-info-row {
-      padding: 12px;
-      border-radius: 14px;
-      background: var(--card-subtle);
-      border: 1px solid var(--border-soft);
-    }
-
-    .modal-label {
-      margin-bottom: 4px;
+    .selected-card dt {
       color: var(--muted);
       font-size: 12px;
       font-weight: 900;
     }
 
-    .modal-value {
+    .selected-card dd {
+      margin: 0;
       color: var(--text);
-      font-size: 15px;
-      font-weight: 750;
-      line-height: 1.7;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: right;
     }
 
-    .modal-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
+    .selected-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 40px;
+      margin-top: 16px;
+      border-radius: 14px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 950;
     }
 
-    .reveal-item {
-      opacity: 0;
-      animation: contentFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    .work-pin-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      z-index: 1;
     }
 
-    .reveal-item:nth-of-type(1) {
-      animation-delay: 0.02s;
+    .work-pin-wrap.selected {
+      width: 42px;
+      height: 42px;
     }
 
-    .reveal-item:nth-of-type(2) {
-      animation-delay: 0.08s;
+    .work-pin {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      border: 4px solid #ffffff;
+      border-radius: 50% 50% 50% 0;
+      background: var(--pin-color, var(--accent));
+      box-shadow:
+        0 0 0 2px rgba(2, 6, 23, 0.2),
+        0 0 0 1px rgba(15, 23, 42, 0.12),
+        0 10px 22px rgba(15, 23, 42, 0.28);
+      transform: rotate(-45deg);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-width 0.18s ease;
     }
 
-    .reveal-item:nth-of-type(3) {
-      animation-delay: 0.14s;
+    .work-pin::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
     }
 
-    @keyframes contentFadeUp {
+    .work-pin.selected {
+      width: 32px;
+      height: 32px;
+      border-width: 5px;
+      box-shadow:
+        0 0 0 7px rgba(255, 255, 255, 0.55),
+        0 16px 34px rgba(15, 23, 42, 0.32);
+    }
+
+    .work-marker {
+      background: transparent;
+      border: 0;
+      overflow: visible;
+      cursor: pointer;
+      transform-origin: center bottom;
+      z-index: 610;
+    }
+
+    .work-marker.selected-marker {
+      z-index: 680;
+    }
+
+    .maplibregl-ctrl-attrib {
+      font-size: 10px;
+    }
+
+    @keyframes selectedCardIn {
       from {
         opacity: 0;
-        transform: translateY(14px) scale(0.99);
+        transform: translateY(10px);
       }
 
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
     }
 
-    @keyframes cardIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.99);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes activeCard {
-      0% {
-        transform: scale(0.985);
-      }
-
-      55% {
-        transform: scale(1.012);
-      }
-
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes chipPop {
-      from {
-        transform: scale(0.94);
-      }
-
-      65% {
-        transform: scale(1.05);
-      }
-
-      to {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes markerDropIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.72);
-      }
-
-      70% {
-        opacity: 1;
-        transform: translateY(2px) scale(1.08);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes pinPop {
-      0% {
-        transform: scale(0.72);
-      }
-
-      60% {
-        transform: scale(1.24);
-      }
-
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes emptyStateIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.98);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes modalOverlayFadeIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
-    @keyframes modalCardPopIn {
-      from {
-        opacity: 0;
-        transform: translateY(18px) scale(0.96);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @media (max-width: 1100px) {
-      .map-hero,
-      .map-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .map-hero-stats {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      .spot-side-panel {
-        position: static;
-        max-height: none;
-      }
-
-      #spot-list {
-        overflow: visible;
+    @media (max-width: 1180px) {
+      .map-stage.filter-open .filter-panel-toggle {
+        transform: translateX(318px);
       }
     }
 
     @media (max-width: 760px) {
       .map-page {
-        width: calc(100% - 24px);
-        padding: 26px 0 52px;
+        width: calc(100% - 16px);
+        padding: 10px 0 18px;
       }
-      .map-reset-view-button {
+
+      .map-shell {
+        min-height: calc(100vh - 100px);
+      }
+
+      .map-title h1 {
+        font-size: 22px;
+      }
+
+      .filter-bar {
+        display: grid;
+        gap: 9px;
+      }
+
+      .map-filter-panel {
+        top: 10px;
+        bottom: 10px;
+        left: 10px;
+        width: min(90vw, 360px);
+        max-width: 90vw;
+        padding: 18px;
+      }
+
+      .filter-panel-toggle {
+        top: 12px;
+        left: 12px;
+      }
+
+      .map-stage.filter-open .filter-panel-toggle {
+        transform: translateX(calc(min(90vw, 360px) + 8px));
+      }
+
+      .map-toolbar {
         top: 10px;
         right: 10px;
-        min-height: 34px;
-        padding: 7px 11px;
+      }
+
+      .tile-button {
+        min-height: 30px;
+        padding: 6px 9px;
         font-size: 11px;
-        }
-
-      .map-hero {
-        padding: 22px;
-        border-radius: 24px;
       }
 
-      .map-hero h1 {
-        font-size: 34px;
-      }
-
-      .map-hero-stats {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      .map-stat-card {
-        padding: 14px 10px;
-      }
-
-      .map-stat-card strong {
-        font-size: 26px;
-      }
-
-      .map-filter-head {
-        display: block;
-      }
-
-      .filter-reset-button {
-        width: 100%;
-        margin-top: 12px;
-      }
-
-      .map-filter-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .tag-filter-list {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .tag-filter-chip {
-        flex: 0 0 auto;
-      }
-
-      .map-card {
-        padding: 16px;
-        border-radius: 24px;
-      }
-
-      #map {
-        height: 460px;
-        min-height: 420px;
+      .map-stage {
+        height: 70vh;
+        min-height: 520px;
         border-radius: 20px;
       }
 
-      .spot-card-actions,
-      .modal-actions {
-        display: grid;
-        grid-template-columns: 1fr;
+      #map {
+        height: 100%;
+        min-height: 0;
       }
 
-      .spot-button {
-        width: 100%;
-        text-align: center;
+      .map-result-pill {
+        top: 62px;
+        left: 12px;
+      }
+
+      .fit-button {
+        top: 54px;
+        right: 10px;
+      }
+
+      .selected-card {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+        padding: 18px;
+        border-radius: 20px 20px 18px 18px;
       }
     }
 
@@ -1396,37 +973,83 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
     }
   </style>
 
-  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    import maplibregl from "maplibre-gl";
+    import "maplibre-gl/dist/maplibre-gl.css";
 
-  <script is:inline>
     const mapDataElement = document.getElementById("map-data");
     const locations = JSON.parse(mapDataElement?.textContent || "[]");
 
     const searchInput = document.getElementById("map-search");
-    const workFilter = document.getElementById("work-filter");
-    const prefectureFilter = document.getElementById("prefecture-filter");
-    const officialFilter = document.getElementById("official-filter");
+    const stationInput = document.getElementById("station-search");
+    const workFilterLabel = document.getElementById("work-filter-label");
+    const prefectureFilterLabel = document.getElementById("prefecture-filter-label");
+    const officialFilterLabel = document.getElementById("official-filter-label");
+    const popoverTriggers = Array.from(document.querySelectorAll("[data-popover-trigger]"));
+    const popovers = Array.from(document.querySelectorAll(".filter-popover"));
+    const filterOptions = Array.from(document.querySelectorAll("[data-filter-option]"));
     const resetButton = document.getElementById("filter-reset");
-    const emptyResetButton = document.getElementById("empty-reset");
-    const mapResetViewButton = document.getElementById("map-reset-view");
-    const tagButtons = Array.from(document.querySelectorAll("[data-tag]"));
-    const spotList = document.getElementById("spot-list");
+    const fitVisibleButton = document.getElementById("fit-visible-button");
+    const railwayToggle = document.getElementById("railway-toggle");
+    const tileButtons = Array.from(document.querySelectorAll("[data-map-style]"));
+    const mapStage = document.querySelector(".map-stage");
+    const filterPanelToggle = document.getElementById("filter-panel-toggle");
+    const filterPanelClose = document.getElementById("filter-panel-close");
     const resultCount = document.getElementById("result-count");
-    const mapSummary = document.getElementById("map-summary");
     const emptyOverlay = document.getElementById("map-empty-overlay");
-    const modalRoot = document.getElementById("modal-root");
+    const selectedCard = document.getElementById("selected-card");
+    const selectedClose = document.getElementById("selected-close");
+    const selectedName = document.getElementById("selected-name");
+    const selectedWork = document.getElementById("selected-work");
+    const selectedPrefecture = document.getElementById("selected-prefecture");
+    const selectedStation = document.getElementById("selected-station");
+    const selectedLink = document.getElementById("selected-link");
 
     const urlParams = new URLSearchParams(window.location.search);
     const initialSpotSlug = urlParams.get("spot") || "";
     const initialWorkSlug = urlParams.get("work") || "";
     const initialAreaSlug = urlParams.get("area") || "";
+    const kantoCenter = [139.55, 35.60];
+
+    const colorPalette = [
+      "#0ea5e9",
+      "#22c55e",
+      "#f97316",
+      "#8b5cf6",
+      "#ec4899",
+      "#14b8a6",
+      "#eab308",
+      "#ef4444",
+      "#6366f1",
+      "#06b6d4",
+      "#84cc16",
+    ];
+
+    const tileConfigs = {
+      light: {
+        style: "https://tiles.openfreemap.org/styles/positron",
+      },
+      standard: {
+        style: "https://tiles.openfreemap.org/styles/liberty",
+      },
+      black: {
+        style: "https://tiles.openfreemap.org/styles/dark",
+      },
+    };
 
     let mapInstance = null;
+    let currentMapStyle = "light";
+    let railwayGeoJson = null;
+    let railwayLoadAttempted = false;
+    let railwayVisible = false;
     let markerMap = {};
-    let activeLocationId = null;
-    let activeTag = "all";
-    let activeAreaSlug = initialAreaSlug;
+    let selectedSpotId = "";
     let currentFilteredLocations = locations;
+    let activeAreaSlug = initialAreaSlug;
+    let selectedWorkValue = "all";
+    let selectedPrefectureValue = "all";
+    let selectedOfficialValue = "all";
+    let pinchZoomSetupDone = false;
 
     function escapeHtml(value) {
       return String(value || "")
@@ -1441,425 +1064,355 @@ const mapSpotsJson = JSON.stringify(mapSpots).replace(/</g, "\\u003c");
       return String(value || "").toLowerCase();
     }
 
-    function googleMapsUrl(location) {
-      return "https://www.google.com/maps/search/?api=1&query=" +
-        encodeURIComponent(location.lat + "," + location.lng);
-    }
-
     function detailUrl(location) {
-      if (!location.slug) {
-        return "/spots/";
+      return location.slug ? "/spots/" + location.slug + "/" : "/spots/";
+    }
+
+    function workColor(location) {
+      const key = String(location.workSlug || location.work || "unknown");
+      let hash = 0;
+
+      for (let index = 0; index < key.length; index += 1) {
+        hash = (hash * 31 + key.charCodeAt(index)) % 9973;
       }
 
-      return "/spots/" + location.slug + "/";
+      return colorPalette[hash % colorPalette.length];
     }
 
-    function animateCountUp(element, target, duration) {
-      const endValue = Number(target || 0);
-      const startTime = performance.now();
+    function createMarkerElement(location, isSelected) {
+      const color = workColor(location);
+      const element = document.createElement("div");
+      const pinWrap = document.createElement("div");
+      const pin = document.createElement("div");
 
-      function update(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const value = Math.round(endValue * eased);
+      element.className = "work-marker" + (isSelected ? " selected-marker" : "");
+      pinWrap.className = "work-pin-wrap" + (isSelected ? " selected" : "");
+      pin.className = "work-pin" + (isSelected ? " selected" : "");
+      pin.style.setProperty("--pin-color", color);
 
-        element.textContent = String(value);
+      pinWrap.appendChild(pin);
+      element.appendChild(pinWrap);
 
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        } else {
-          element.textContent = String(endValue);
-        }
-      }
-
-      requestAnimationFrame(update);
+      return element;
     }
 
-    function createMarkerIcon(location, isActive) {
-      const level = location.officialLevel || "fan";
-
-      return L.divIcon({
-        className: "",
-        html:
-          '<div class="custom-pin-wrap">' +
-            '<div class="custom-pin level-' + level + (isActive ? " active" : "") + '"></div>' +
-          '</div>',
-        iconSize: isActive ? [30, 30] : [24, 24],
-        iconAnchor: isActive ? [15, 15] : [12, 12],
-        popupAnchor: [0, -14],
-      });
-    }
-
-    function createPopupHtml(location) {
-      const level = location.officialLevel || "fan";
-
-      return `
-        <div class="popup-content">
-          <div class="popup-title">${escapeHtml(location.name)}</div>
-
-          <div class="popup-meta">
-            ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
-            ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
-            ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
-          </div>
-
-          <div class="popup-level level-${escapeHtml(level)}">
-            ${escapeHtml(location.officialLabel)}
-          </div>
-
-          <div class="popup-actions">
-            <button class="popup-button" type="button" onclick="window.openSpotModal('${escapeHtml(location.id)}')">
-              詳細を見る
-            </button>
-
-            <button class="popup-button" type="button" onclick="window.openSpotGoogleMap('${escapeHtml(location.id)}')">
-              Googleマップ
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function initMap() {
-      if (!locations.length) {
-        renderSpotList([]);
-        updateResultCount(0);
-        updateEmptyState(0);
+    function setMarkerSelected(markerEntry, isSelected) {
+      if (!markerEntry) {
         return;
       }
 
-      const firstLocation = locations[0];
+      const element = markerEntry.element;
+      const pinWrap = element.querySelector(".work-pin-wrap");
+      const pin = element.querySelector(".work-pin");
 
-        mapInstance = L.map("map", {
-        zoomControl: false,
-        scrollWheelZoom: false,
-        touchZoom: true,
-        zoomSnap: 0.5,
-        zoomDelta: 1,
-        doubleClickZoom: false,
-        inertia: true,
-        zoomAnimation: true,
-        fadeAnimation: true,
-        markerZoomAnimation: true,
-        }).setView([firstLocation.lat, firstLocation.lng], 12);
-
-      L.control.zoom({
-        position: "bottomright",
-      }).addTo(mapInstance);
-
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap &copy; CARTO",
-        subdomains: "abcd",
-        maxZoom: 20,
-        }).addTo(mapInstance);
-
-        enableDesktopPinchZoom();
-
-      mapInstance.on("click", () => {
-        clearActiveLocation();
-      });
-
-      locations.forEach((location) => {
-        const marker = L.marker([location.lat, location.lng], {
-          icon: createMarkerIcon(location, false),
-        }).addTo(mapInstance);
-
-        marker.bindPopup(createPopupHtml(location));
-
-        marker.on("click", () => {
-        focusLocation(location.id, {
-            fromMarker: true,
-        });
-        });
-
-        markerMap[String(location.id)] = marker;
-      });
-
-        setTimeout(() => {
-        mapInstance.invalidateSize();
-        }, 100);
+      element.classList.toggle("selected-marker", isSelected);
+      pinWrap?.classList.toggle("selected", isSelected);
+      pin?.classList.toggle("selected", isSelected);
     }
 
-
-    function enableDesktopPinchZoom() {
-        if (!mapInstance) {
-            return;
-        }
-
-        const mapElement = mapInstance.getContainer();
-
-        if (!mapElement) {
-            return;
-        }
-
-        let lastPinchZoomAt = 0;
-
-        mapElement.addEventListener("wheel", (event) => {
-            if (!event.ctrlKey) {
-            return;
-            }
-
-            event.preventDefault();
-
-            const now = Date.now();
-
-            if (now - lastPinchZoomAt < 44) {
-            return;
-            }
-
-            lastPinchZoomAt = now;
-
-            const currentZoom = mapInstance.getZoom();
-            const direction = event.deltaY < 0 ? 1 : -1;
-            const nextZoom = currentZoom + direction * 0.75;
-
-            const minZoom = mapInstance.getMinZoom();
-            const maxZoom = mapInstance.getMaxZoom();
-
-            const safeZoom = Math.max(minZoom, Math.min(maxZoom, nextZoom));
-            const point = mapInstance.mouseEventToContainerPoint(event);
-
-            mapInstance.setZoomAround(point, safeZoom, {
-            animate: true,
-            });
-        }, {
-            passive: false,
-        });
-        }
-
-function fitMapToLocations(items) {
-  if (!mapInstance || !items.length) {
-    return;
-  }
-
-  const bounds = items
-    .map((location) => [location.lat, location.lng])
-    .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
-
-  if (!bounds.length) {
-    return;
-  }
-
-  if (bounds.length === 1) {
-    mapInstance.flyTo(bounds[0], 13, {
-      animate: true,
-      duration: 0.7,
-    });
-
-    return;
-  }
-
-  mapInstance.fitBounds(bounds, {
-    padding: [88, 88],
-    maxZoom: 11.5,
-    animate: true,
-    duration: 0.7,
-  });
-}
-
-function renderSpotList(items) {
-  if (!spotList) {
-    return;
-  }
-
-  if (!items.length) {
-    spotList.innerHTML =
-      '<div class="empty-list-card">' +
-        '<h3>表示できるスポットがありません</h3>' +
-        '<p>検索条件を変更するか、条件をリセットしてください。</p>' +
-      '</div>';
-
-    return;
-  }
-
-  spotList.innerHTML = items.map((location) => {
-    const level = location.officialLevel || "fan";
-
-    return `
-      <article
-        class="spot-card level-${escapeHtml(level)}"
-        data-location-id="${escapeHtml(location.id)}"
-      >
-        <div class="spot-card-main">
-          <div class="spot-card-title">${escapeHtml(location.name)}</div>
-
-          <div class="spot-meta-row">
-            ${location.work ? `<span>${escapeHtml(location.work)}</span>` : ""}
-            ${location.prefecture ? `<span>${escapeHtml(location.prefecture)}</span>` : ""}
-            ${location.station ? `<span>${escapeHtml(location.station)}</span>` : ""}
-          </div>
-
-          <div class="level-pill level-${escapeHtml(level)}">
-            ${escapeHtml(location.officialLabel)}
-          </div>
-
-          <div class="spot-card-actions">
-            <button class="spot-button" type="button" data-detail-id="${escapeHtml(location.id)}">
-              詳細を見る
-            </button>
-          </div>
-        </div>
-      </article>
-    `;
-  }).join("");
-
-  spotList.querySelectorAll(".spot-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      focusLocation(card.dataset.locationId);
-    });
-  });
-
-  spotList.querySelectorAll("[data-detail-id]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      openSpotModal(button.dataset.detailId);
-    });
-  });
-}
-
-function resetMapView() {
-  if (!mapInstance) {
-    return;
-  }
-
-  mapInstance.closePopup();
-  clearActiveLocation();
-
-  const targets = currentFilteredLocations.length > 0
-    ? currentFilteredLocations
-    : locations;
-
-  setTimeout(() => {
-    fitMapToLocations(targets);
-  }, 80);
-}
-
-
-function focusLocation(locationId, options = {}) {
-  const id = String(locationId);
-  const marker = markerMap[id];
-  const fromMarker = options.fromMarker === true;
-
-  if (!marker || !mapInstance) {
-    return;
-  }
-
-  if (activeLocationId === id && !fromMarker) {
-    resetMapView();
-    return;
-  }
-
-  const latLng = marker.getLatLng();
-
-  mapInstance.flyTo(latLng, 12, {
-    animate: true,
-    duration: 0.85,
-    easeLinearity: 0.25,
-  });
-
-  marker.openPopup();
-
-  highlightLocation(id, {
-    scrollToCard: false,
-  });
-}
-
-function highlightLocation(locationId, options = {}) {
-  const id = String(locationId);
-  const shouldScrollToCard = options.scrollToCard === true;
-
-  activeLocationId = id;
-
-  document.querySelectorAll(".spot-card").forEach((card) => {
-    if (card.dataset.locationId === id) {
-      card.classList.add("active");
-
-      if (shouldScrollToCard) {
-        setTimeout(() => {
-          card.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }, 100);
+    function setupPinchZoomOnly() {
+      if (!mapInstance || pinchZoomSetupDone) {
+        return;
       }
-    } else {
-      card.classList.remove("active");
+
+      const canvasContainer = mapInstance.getCanvasContainer();
+
+      if (!canvasContainer) {
+        return;
+      }
+
+      pinchZoomSetupDone = true;
+
+      canvasContainer.addEventListener("wheel", (event) => {
+        if (!event.ctrlKey && !event.metaKey) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const currentZoom = mapInstance.getZoom();
+        const zoomDelta = Math.max(-0.75, Math.min(0.75, -event.deltaY * 0.014));
+        const nextZoom = Math.max(
+          mapInstance.getMinZoom(),
+          Math.min(mapInstance.getMaxZoom(), currentZoom + zoomDelta)
+        );
+        const rect = canvasContainer.getBoundingClientRect();
+        const point = [
+          event.clientX - rect.left,
+          event.clientY - rect.top,
+        ];
+        const around = mapInstance.unproject(point);
+
+        mapInstance.easeTo({
+          zoom: nextZoom,
+          around,
+          duration: 40,
+          easing: (t) => t,
+        });
+      }, {
+        passive: false,
+      });
     }
-  });
 
-  Object.keys(markerMap).forEach((markerId) => {
-    const marker = markerMap[markerId];
-    const location = locations.find((item) => String(item.id) === String(markerId));
+    function setMapStyle(style) {
+      if (!mapInstance || !tileConfigs[style]) {
+        return;
+      }
 
-    if (!marker || !location) {
-      return;
-    }
+      currentMapStyle = style;
+      mapInstance.setStyle(tileConfigs[style].style);
 
-    marker.setIcon(createMarkerIcon(location, markerId === id));
-  });
-}
-
-function clearActiveLocation() {
-  activeLocationId = null;
-
-  document.querySelectorAll(".spot-card").forEach((card) => {
-    card.classList.remove("active");
-  });
-
-  Object.keys(markerMap).forEach((markerId) => {
-    const marker = markerMap[markerId];
-    const location = locations.find((item) => String(item.id) === String(markerId));
-
-    if (!marker || !location) {
-      return;
-    }
-
-    marker.setIcon(createMarkerIcon(location, false));
-  });
-}
-
-    function applyFilters() {
-      const keyword = normalizeText(searchInput?.value);
-      const selectedWork = workFilter?.value || "all";
-      const selectedPrefecture = prefectureFilter?.value || "all";
-      const selectedOfficial = officialFilter?.value || "all";
-
-      const filtered = locations.filter((location) => {
-        const target = normalizeText([
-          location.name,
-          location.work,
-          location.prefecture,
-          location.station,
-          location.description,
-          location.access,
-          location.note,
-          (location.tags || []).join(" "),
-        ].join(" "));
-
-        const keywordMatch = !keyword || target.includes(keyword);
-        const workMatch = selectedWork === "all" || location.work === selectedWork;
-        const prefectureMatch = selectedPrefecture === "all" || location.prefecture === selectedPrefecture;
-        const officialMatch = selectedOfficial === "all" || location.officialLevel === selectedOfficial;
-        const tagMatch = activeTag === "all" || (location.tags || []).includes(activeTag);
-        const areaMatch = !activeAreaSlug || location.areaSlug === activeAreaSlug;
-
-        return keywordMatch && workMatch && prefectureMatch && officialMatch && tagMatch && areaMatch;
+      tileButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.mapStyle === style);
       });
 
-        currentFilteredLocations = filtered;
-        renderSpotList(filtered);
-        syncMarkers(filtered);
-        updateResultCount(filtered.length);
-        updateSummary(filtered.length);
-        updateEmptyState(filtered.length);
+      if (mapStage) {
+        mapStage.classList.toggle("map-dark", style === "black");
+      }
+    }
+
+    function railwayStyle() {
+      return currentMapStyle === "black" ? "#a855f7" : "#111827";
+    }
+
+    function isRailwayBaseLayer(layer) {
+      if (!layer || layer.type !== "line") {
+        return false;
+      }
+
+      const id = String(layer.id || "").toLowerCase();
+      const sourceLayer = String(layer["source-layer"] || "").toLowerCase();
+      const text = id + " " + sourceLayer;
+      const strongRailMatch =
+        text.includes("rail") ||
+        text.includes("railway") ||
+        text.includes("train");
+
+      if (strongRailMatch) {
+        return true;
+      }
+
+      const transitMatch =
+        text.includes("transit") ||
+        text.includes("transportation") ||
+        text.includes("transport");
+
+      return transitMatch && !text.includes("road") && !text.includes("highway") && !text.includes("street");
+    }
+
+    function applyRailwayPaint() {
+      if (!mapInstance || !mapInstance.isStyleLoaded()) {
+        return;
+      }
+
+      const layers = mapInstance.getStyle().layers || [];
+      const railwayColor = railwayStyle();
+      const railwayWidth = currentMapStyle === "black" ? 2.8 : 2.4;
+
+      layers
+        .filter(isRailwayBaseLayer)
+        .forEach((layer) => {
+          try {
+            mapInstance.setPaintProperty(layer.id, "line-color", railwayColor);
+            mapInstance.setPaintProperty(layer.id, "line-opacity", 0.82);
+            mapInstance.setPaintProperty(layer.id, "line-width", railwayWidth);
+          } catch (error) {
+            // Some style layers may not accept direct paint overrides; ignore quietly.
+          }
+        });
+    }
+
+    function updateRailwayStyle() {
+      if (mapInstance?.getLayer("railways-line")) {
+        mapInstance.setPaintProperty("railways-line", "line-color", railwayStyle());
+        mapInstance.setPaintProperty("railways-line", "line-width", currentMapStyle === "black" ? 3.2 : 2.8);
+      }
+
+      applyRailwayPaint();
+    }
+
+    async function ensureRailwayLayer() {
+      if (!mapInstance || railwayGeoJson || railwayLoadAttempted) {
+        return;
+      }
+
+      railwayLoadAttempted = true;
+
+      try {
+        const response = await fetch("/railways/railways-lite.geojson", {
+          cache: "force-cache",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        railwayGeoJson = await response.json();
+      } catch (error) {
+        railwayGeoJson = null;
+      }
+    }
+
+    function addRailwaySourceAndLayer() {
+      if (!mapInstance || !railwayGeoJson || !railwayVisible || !mapInstance.isStyleLoaded()) {
+        return;
+      }
+
+      if (!mapInstance.getSource("railways")) {
+        mapInstance.addSource("railways", {
+          type: "geojson",
+          data: railwayGeoJson,
+        });
+      }
+
+      if (!mapInstance.getLayer("railways-line")) {
+        mapInstance.addLayer({
+          id: "railways-line",
+          type: "line",
+          source: "railways",
+          paint: {
+            "line-color": railwayStyle(),
+            "line-width": currentMapStyle === "black" ? 3.2 : 2.8,
+            "line-opacity": 0.82,
+          },
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+        });
+      }
+
+      updateRailwayStyle();
+    }
+
+    async function setRailwayVisible(isVisible) {
+      if (!mapInstance) {
+        return;
+      }
+
+      railwayVisible = isVisible;
+
+      if (isVisible) {
+        await ensureRailwayLayer();
+        addRailwaySourceAndLayer();
+        return;
+      }
+
+      if (mapInstance.getLayer("railways-line")) {
+        mapInstance.removeLayer("railways-line");
+      }
+
+      if (mapInstance.getSource("railways")) {
+        mapInstance.removeSource("railways");
+      }
+    }
+
+    function fitMapToLocations(items, options = {}) {
+      if (!mapInstance || !items.length) {
+        return;
+      }
+
+      const points = items
+        .map((location) => [location.lng, location.lat])
+        .filter((point) => Number.isFinite(point[0]) && Number.isFinite(point[1]));
+
+      if (!points.length) {
+        return;
+      }
+
+      if (points.length === 1) {
+        mapInstance.flyTo({
+          center: points[0],
+          zoom: options.singleZoom || 14,
+          duration: 500,
+        });
+        return;
+      }
+
+      const bounds = points.reduce((nextBounds, point) => {
+        return nextBounds.extend(point);
+      }, new maplibregl.LngLatBounds(points[0], points[0]));
+
+      mapInstance.fitBounds(bounds, {
+        padding: options.padding || 80,
+        maxZoom: options.maxZoom || 13,
+        duration: 500,
+      });
+    }
+
+    function fitInitialKantoView() {
+      if (!mapInstance) {
+        return;
+      }
+
+      mapInstance.jumpTo({
+        center: kantoCenter,
+        zoom: 8,
+      });
+    }
+
+    function renderSelectedCard(location) {
+      if (!selectedCard || !location) {
+        return;
+      }
+
+      selectedName.textContent = location.name || "名称未登録";
+      selectedWork.textContent = location.work || "作品名未登録";
+      selectedPrefecture.textContent = location.prefecture || "未登録";
+      selectedStation.textContent = location.station || "未登録";
+      selectedLink.href = detailUrl(location);
+      selectedCard.hidden = false;
+    }
+
+    function updateMarkerSelection() {
+      Object.keys(markerMap).forEach((id) => {
+        const marker = markerMap[id];
+        const location = locations.find((item) => String(item.id) === id);
+
+        if (!marker || !location) {
+          return;
+        }
+
+        setMarkerSelected(marker, id === selectedSpotId);
+      });
+    }
+
+    function selectSpot(locationId, shouldMove = true) {
+      const id = String(locationId || "");
+      const location = locations.find((item) => String(item.id) === id);
+      const markerEntry = markerMap[id];
+
+      if (!location || !markerEntry || !mapInstance) {
+        return;
+      }
+
+      selectedSpotId = id;
+      updateMarkerSelection();
+      renderSelectedCard(location);
+
+      if (shouldMove) {
+        mapInstance.flyTo({
+          center: [location.lng, location.lat],
+          zoom: Math.max(mapInstance.getZoom(), 14),
+          duration: 450,
+        });
+      }
+    }
+
+    function clearSelectedSpot() {
+      selectedSpotId = "";
+
+      if (selectedCard) {
+        selectedCard.hidden = true;
+      }
+
+      updateMarkerSelection();
     }
 
     function syncMarkers(filtered) {
       if (!mapInstance) {
         return;
       }
-
-      clearActiveLocation();
 
       const visibleMap = {};
 
@@ -1868,308 +1421,404 @@ function clearActiveLocation() {
       });
 
       Object.keys(markerMap).forEach((id) => {
-        const marker = markerMap[id];
+        const markerEntry = markerMap[id];
 
-        if (!marker) {
+        if (!markerEntry) {
           return;
         }
 
         if (visibleMap[id]) {
-          if (!mapInstance.hasLayer(marker)) {
-            marker.addTo(mapInstance);
+          if (!markerEntry.visible) {
+            markerEntry.marker.addTo(mapInstance);
+            markerEntry.visible = true;
           }
-        } else {
-          if (mapInstance.hasLayer(marker)) {
-            mapInstance.removeLayer(marker);
-          }
+        } else if (markerEntry.visible) {
+          markerEntry.marker.remove();
+          markerEntry.visible = false;
         }
       });
 
-      fitMapToLocations(filtered);
+      if (selectedSpotId && !visibleMap[selectedSpotId]) {
+        clearSelectedSpot();
+      }
     }
 
     function updateResultCount(count) {
-      if (!resultCount) {
-        return;
+      if (resultCount) {
+        resultCount.textContent = count + "件";
       }
 
-      resultCount.textContent = count + "件のスポットを表示中";
+      if (emptyOverlay) {
+        emptyOverlay.hidden = count !== 0;
+      }
     }
 
-    function updateSummary(count) {
-      if (!mapSummary) {
-        return;
+    function officialDisplayName(value) {
+      if (value === "official") {
+        return "公式";
       }
 
-      const labels = [];
-      const keyword = searchInput ? searchInput.value.trim() : "";
-      const selectedWork = workFilter?.value || "all";
-      const selectedPrefecture = prefectureFilter?.value || "all";
-      const selectedOfficial = officialFilter?.value || "all";
-
-      if (keyword) {
-        labels.push("検索: " + keyword);
+      if (value === "tourism") {
+        return "観光協会";
       }
 
-      if (selectedWork !== "all") {
-        labels.push("作品: " + selectedWork);
+      if (value === "fan") {
+        return "ファン考察";
       }
 
-      if (selectedPrefecture !== "all") {
-        labels.push(selectedPrefecture);
-      }
-      if (activeAreaSlug) {
-      labels.push("地域: " + activeAreaSlug);
-      }
-
-      if (selectedOfficial === "official") {
-        labels.push("公式");
-      }
-
-      if (selectedOfficial === "tourism") {
-        labels.push("観光協会・自治体");
-      }
-
-      if (selectedOfficial === "fan") {
-        labels.push("ファン考察");
-      }
-
-      if (activeTag !== "all") {
-        labels.push("#" + activeTag);
-      }
-
-      if (!labels.length) {
-        mapSummary.className = "map-summary muted";
-        mapSummary.textContent = count + "件のスポットを表示中";
-        return;
-      }
-
-      mapSummary.className = "map-summary";
-      mapSummary.innerHTML =
-        '<span class="summary-label">絞り込み中</span>' +
-        labels.map((label) => '<span class="summary-pill">' + escapeHtml(label) + '</span>').join("") +
-        '<span class="summary-pill">' + count + '件表示</span>';
+      return "すべて";
     }
 
-    function updateEmptyState(count) {
-      if (!emptyOverlay) {
-        return;
+    function updateFilterLabels() {
+      if (workFilterLabel) {
+        workFilterLabel.textContent = selectedWorkValue === "all" ? "すべて" : selectedWorkValue;
       }
 
-      emptyOverlay.hidden = count !== 0;
+      if (prefectureFilterLabel) {
+        prefectureFilterLabel.textContent = selectedPrefectureValue === "all" ? "すべて" : selectedPrefectureValue;
+      }
+
+      if (officialFilterLabel) {
+        officialFilterLabel.textContent = officialDisplayName(selectedOfficialValue);
+      }
     }
 
+    function updateOptionStates() {
+      filterOptions.forEach((option) => {
+        const type = option.dataset.filterOption;
+        let value = "all";
 
-
-    function applyInitialUrlParams() {
-    if (initialWorkSlug && workFilter) {
-        const targetWorkLocation = locations.find((location) => {
-        return location.workSlug === initialWorkSlug;
-        });
-
-        if (targetWorkLocation?.work) {
-        workFilter.value = targetWorkLocation.work;
-        }
-    }
-
-    applyFilters();
-
-    if (!initialSpotSlug) {
-        return;
-    }
-
-    const targetLocation = locations.find((location) => {
-        return location.slug === initialSpotSlug;
-    });
-
-    if (!targetLocation) {
-        return;
-    }
-
-    setTimeout(() => {
-        const marker = markerMap[String(targetLocation.id)];
-
-        if (marker && mapInstance && !mapInstance.hasLayer(marker)) {
-        if (workFilter) {
-            workFilter.value = "all";
+        if (type === "work") {
+          value = selectedWorkValue;
         }
 
-        activeAreaSlug = "";
-        applyFilters();
+        if (type === "prefecture") {
+          value = selectedPrefectureValue;
         }
 
+        if (type === "official") {
+          value = selectedOfficialValue;
+        }
+
+        option.classList.toggle("active", option.dataset.value === value);
+      });
+    }
+
+    function updateFilterToggleState() {
+      if (!filterPanelToggle) {
+        return;
+      }
+
+      const hasActiveFilter =
+        Boolean(searchInput?.value.trim()) ||
+        Boolean(stationInput?.value.trim()) ||
+        selectedWorkValue !== "all" ||
+        selectedPrefectureValue !== "all" ||
+        selectedOfficialValue !== "all";
+
+      filterPanelToggle.classList.toggle("has-active-filter", hasActiveFilter);
+    }
+
+    function closePopovers(exceptType = "") {
+      popovers.forEach((popover) => {
+        if (exceptType && popover.id === exceptType + "-popover") {
+          return;
+        }
+
+        popover.hidden = true;
+      });
+
+      popoverTriggers.forEach((trigger) => {
+        const isOpen = exceptType && trigger.dataset.popoverTrigger === exceptType;
+        trigger.closest(".filter-menu")?.classList.toggle("open", Boolean(isOpen));
+        trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      });
+    }
+
+    function togglePopover(type) {
+      const popover = document.getElementById(type + "-popover");
+
+      if (!popover) {
+        return;
+      }
+
+      const willOpen = popover.hidden;
+      closePopovers(willOpen ? type : "");
+      popover.hidden = !willOpen;
+    }
+
+    function setFilterValue(type, value) {
+      if (type === "work") {
+        selectedWorkValue = value || "all";
+      }
+
+      if (type === "prefecture") {
+        selectedPrefectureValue = value || "all";
+      }
+
+      if (type === "official") {
+        selectedOfficialValue = value || "all";
+      }
+
+      updateFilterLabels();
+      updateOptionStates();
+      updateFilterToggleState();
+      closePopovers();
+      applyFilters({ fit: true });
+    }
+
+    function setFilterPanelOpen(isOpen) {
+      if (!mapStage || !filterPanelToggle) {
+        return;
+      }
+
+      mapStage.classList.toggle("filter-open", isOpen);
+      filterPanelToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+
+      if (mapInstance) {
         setTimeout(() => {
-        focusLocation(targetLocation.id);
-        }, 150);
-    }, 250);
+          mapInstance.resize();
+        }, 300);
+      }
     }
 
+    function toggleFilterPanel() {
+      const isOpen = mapStage?.classList.contains("filter-open") || false;
+      setFilterPanelOpen(!isOpen);
+    }
+
+    function applyFilters(options = {}) {
+      const shouldFit = options.fit === true;
+      const keyword = normalizeText(searchInput?.value);
+      const stationKeyword = normalizeText(stationInput?.value);
+      const selectedWork = selectedWorkValue;
+      const selectedPrefecture = selectedPrefectureValue;
+      const selectedOfficial = selectedOfficialValue;
+
+      const filtered = locations.filter((location) => {
+        const keywordTarget = normalizeText([
+          location.name,
+          location.work,
+          location.prefecture,
+          location.station,
+          (location.tags || []).join(" "),
+        ].join(" "));
+        const stationTarget = normalizeText(location.station);
+
+        const keywordMatch = !keyword || keywordTarget.includes(keyword);
+        const stationMatch = !stationKeyword || stationTarget.includes(stationKeyword);
+        const workMatch = selectedWork === "all" || location.work === selectedWork;
+        const prefectureMatch = selectedPrefecture === "all" || location.prefecture === selectedPrefecture;
+        const officialMatch = selectedOfficial === "all" || location.officialLevel === selectedOfficial;
+        const areaMatch = !activeAreaSlug || location.areaSlug === activeAreaSlug;
+
+        return keywordMatch && stationMatch && workMatch && prefectureMatch && officialMatch && areaMatch;
+      });
+
+      currentFilteredLocations = filtered;
+      syncMarkers(filtered);
+      updateResultCount(filtered.length);
+      updateFilterToggleState();
+
+      if (shouldFit) {
+        fitMapToLocations(filtered);
+      }
+    }
 
     function resetFilters() {
       if (searchInput) {
         searchInput.value = "";
       }
 
-      if (workFilter) {
-        workFilter.value = "all";
+      if (stationInput) {
+        stationInput.value = "";
       }
 
-      if (prefectureFilter) {
-        prefectureFilter.value = "all";
-      }
+      selectedWorkValue = "all";
+      selectedPrefectureValue = "all";
+      selectedOfficialValue = "all";
+      updateFilterLabels();
+      updateOptionStates();
 
-      if (officialFilter) {
-        officialFilter.value = "all";
-      }
-
-      activeTag = "all";
       activeAreaSlug = "";
+      clearSelectedSpot();
+      applyFilters({ fit: true });
+      fitMapToLocations(currentFilteredLocations);
+    }
 
-      tagButtons.forEach((button) => {
-        if (button.dataset.tag === "all") {
-          button.classList.add("active");
+    function applyInitialUrlParams() {
+      if (initialWorkSlug) {
+        const targetWorkLocation = locations.find((location) => location.workSlug === initialWorkSlug);
+
+        if (targetWorkLocation?.work) {
+          selectedWorkValue = targetWorkLocation.work;
+          updateFilterLabels();
+          updateOptionStates();
+        }
+      }
+
+      applyFilters();
+
+      const targetLocation = locations.find((location) => location.slug === initialSpotSlug);
+
+      if (!targetLocation) {
+        if (initialWorkSlug || initialAreaSlug) {
+          fitMapToLocations(currentFilteredLocations);
         } else {
-          button.classList.remove("active");
+          fitInitialKantoView();
+        }
+        return;
+      }
+
+      if (!currentFilteredLocations.some((location) => location.slug === initialSpotSlug)) {
+        activeAreaSlug = "";
+        selectedWorkValue = "all";
+        updateFilterLabels();
+        updateOptionStates();
+        applyFilters();
+      }
+
+      setTimeout(() => {
+        selectSpot(targetLocation.id);
+      }, 120);
+    }
+
+    function initMap() {
+      if (!locations.length || typeof maplibregl === "undefined") {
+        updateResultCount(0);
+        return;
+      }
+
+      mapInstance = new maplibregl.Map({
+        container: "map",
+        style: tileConfigs.light.style,
+        center: kantoCenter,
+        zoom: 8,
+        scrollZoom: false,
+        dragPan: true,
+        touchZoomRotate: true,
+        doubleClickZoom: true,
+        attributionControl: true,
+      });
+
+      mapInstance.addControl(new maplibregl.NavigationControl({
+        showCompass: false,
+      }), "bottom-right");
+
+      mapInstance.on("styleimagemissing", (event) => {
+        if (mapInstance.hasImage(event.id)) {
+          return;
+        }
+
+        const data = new Uint8Array(4);
+        mapInstance.addImage(event.id, {
+          width: 1,
+          height: 1,
+          data,
+        });
+      });
+
+      mapInstance.on("style.load", () => {
+        applyRailwayPaint();
+
+        if (railwayVisible) {
+          addRailwaySourceAndLayer();
         }
       });
 
-      applyFilters();
-    }
+      locations.forEach((location) => {
+        const element = createMarkerElement(location, false);
+        const marker = new maplibregl.Marker({
+          element,
+          anchor: "bottom",
+        })
+          .setLngLat([location.lng, location.lat])
+          .addTo(mapInstance);
 
-    function openSpotModal(locationId) {
-      const location = locations.find((item) => String(item.id) === String(locationId));
-
-      if (!location || !modalRoot) {
-        return;
-      }
-
-      modalRoot.innerHTML = `
-        <div class="modal-overlay" id="modal-overlay">
-          <div class="modal-card">
-            <div class="modal-header">
-              <div>
-                <div class="modal-title">${escapeHtml(location.name)}</div>
-                <p class="modal-sub">${escapeHtml(location.work || "作品名未登録")}</p>
-              </div>
-
-              <button class="modal-close" type="button" id="modal-close">
-                閉じる
-              </button>
-            </div>
-
-            <div class="modal-info">
-              <div class="modal-info-row">
-                <div class="modal-label">説明</div>
-                <div class="modal-value">${escapeHtml(location.description || "未登録")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">アクセス</div>
-                <div class="modal-value">${escapeHtml(location.access || "未登録")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">都道府県</div>
-                <div class="modal-value">${escapeHtml(location.prefecture || "未登録")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">最寄駅</div>
-                <div class="modal-value">${escapeHtml(location.station || "未登録")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">関連度</div>
-                <div class="modal-value">${escapeHtml(location.officialLabel || "ファン考察")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">タグ</div>
-                <div class="modal-value">${escapeHtml((location.tags || []).join(", ") || "未登録")}</div>
-              </div>
-
-              <div class="modal-info-row">
-                <div class="modal-label">メモ</div>
-                <div class="modal-value">${escapeHtml(location.note || "未登録")}</div>
-              </div>
-            </div>
-
-            <div class="modal-actions">
-              <a class="spot-button" href="${detailUrl(location)}">
-                スポットページ
-              </a>
-
-              <button class="spot-button" type="button" id="modal-google-map">
-                Googleマップ
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById("modal-overlay")?.addEventListener("click", closeModal);
-      document.querySelector(".modal-card")?.addEventListener("click", (event) => event.stopPropagation());
-      document.getElementById("modal-close")?.addEventListener("click", closeModal);
-      document.getElementById("modal-google-map")?.addEventListener("click", () => {
-        openSpotGoogleMap(location.id);
-      });
-    }
-
-    function closeModal() {
-      if (!modalRoot) {
-        return;
-      }
-
-      modalRoot.innerHTML = "";
-    }
-
-    function openSpotGoogleMap(locationId) {
-      const location = locations.find((item) => String(item.id) === String(locationId));
-
-      if (!location) {
-        return;
-      }
-
-      window.open(googleMapsUrl(location), "_blank");
-    }
-
-    window.openSpotModal = openSpotModal;
-    window.openSpotGoogleMap = openSpotGoogleMap;
-
-    document.querySelectorAll(".count-up").forEach((element) => {
-      animateCountUp(element, Number(element.dataset.count || 0), 720);
-    });
-
-    searchInput?.addEventListener("input", applyFilters);
-    workFilter?.addEventListener("change", applyFilters);
-    prefectureFilter?.addEventListener("change", applyFilters);
-    officialFilter?.addEventListener("change", applyFilters);
-    resetButton?.addEventListener("click", resetFilters);
-    emptyResetButton?.addEventListener("click", resetFilters);
-    mapResetViewButton?.addEventListener("click", resetMapView);
-
-    tagButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        activeTag = button.dataset.tag || "all";
-
-        tagButtons.forEach((item) => {
-          if (item.dataset.tag === activeTag) {
-            item.classList.add("active");
-          } else {
-            item.classList.remove("active");
-          }
+        element.addEventListener("click", (event) => {
+          event.stopPropagation();
+          selectSpot(location.id, false);
         });
 
-        applyFilters();
+        markerMap[String(location.id)] = {
+          marker,
+          element,
+          visible: true,
+        };
+      });
+
+      mapInstance.on("click", () => {
+        clearSelectedSpot();
+      });
+
+      mapInstance.on("load", () => {
+        mapInstance.resize();
+        setupPinchZoomOnly();
+        applyRailwayPaint();
+        applyInitialUrlParams();
+      });
+    }
+
+    searchInput?.addEventListener("input", () => applyFilters({ fit: true }));
+    stationInput?.addEventListener("input", () => applyFilters({ fit: true }));
+    popoverTriggers.forEach((trigger) => {
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        togglePopover(trigger.dataset.popoverTrigger || "");
       });
     });
 
-    currentFilteredLocations = locations;
-    renderSpotList(locations);
-    updateResultCount(locations.length);
-    updateSummary(locations.length);
-    updateEmptyState(locations.length);
+    filterOptions.forEach((option) => {
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setFilterValue(option.dataset.filterOption || "", option.dataset.value || "all");
+      });
+    });
+
+    document.addEventListener("click", () => {
+      closePopovers();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closePopovers();
+      }
+    });
+
+    resetButton?.addEventListener("click", resetFilters);
+    filterPanelToggle?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleFilterPanel();
+    });
+    filterPanelClose?.addEventListener("click", () => {
+      setFilterPanelOpen(false);
+    });
+    selectedClose?.addEventListener("click", clearSelectedSpot);
+    fitVisibleButton?.addEventListener("click", () => {
+      fitMapToLocations(currentFilteredLocations);
+    });
+
+    tileButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setMapStyle(button.dataset.mapStyle || "light");
+      });
+    });
+
+    railwayToggle?.addEventListener("click", async () => {
+      railwayToggle.classList.toggle("active");
+      railwayToggle.setAttribute(
+        "aria-pressed",
+        railwayToggle.classList.contains("active") ? "true" : "false"
+      );
+      await setRailwayVisible(railwayToggle.classList.contains("active"));
+    });
+
+    updateFilterLabels();
+    updateOptionStates();
+    updateFilterToggleState();
+
+    // Next phase: generate public/railways/railways-lite.geojson from National Land Numerical Information N02.
     initMap();
-    applyInitialUrlParams();
   </script>
 </BaseLayout>
