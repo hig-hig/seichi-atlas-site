@@ -1,0 +1,24 @@
+{
+  "name": "Seichi Atlas",
+  "short_name": "Seichi Atlas",
+  "description": "アニメや漫画の聖地巡礼スポットを作品・地域・地図から探せる非公式ポータルです。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
