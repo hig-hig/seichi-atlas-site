@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:uji-route": "node scripts/build-uji-guide-route.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

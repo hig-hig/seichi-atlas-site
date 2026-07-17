@@ -1,0 +1,407 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import publicData from "../../data/publicData.json";
+import { soundEuphoniumUjiHalfDay as route } from "../../data/routes.js";
+import routeGeometryRaw from "../../data/routeGeometries/sound-euphonium-uji-half-day.geojson?raw";
+
+const title = "響け！ユーフォニアム宇治聖地巡礼モデルコース｜大吉山を巡る半日ルート";
+const description = "JR宇治駅から縣神社、あじろぎの道、宇治神社、宇治上神社、大吉山展望台、宇治橋を経て京阪宇治駅へ向かう、徒歩約4〜5時間のモデルコース。";
+const canonicalPath = "/guides/sound-euphonium-uji-half-day/";
+const siteUrl = "https://seichi-atlas-site.vercel.app";
+const spots = publicData.spots ?? [];
+
+const routeSpots = route.steps.map((step, index) => {
+  const spot = spots.find((item) => item.slug === step.slug);
+
+  if (!spot) {
+    throw new Error(`Route spot not found: ${step.slug}`);
+  }
+
+  return {
+    ...spot,
+    ...step,
+    order: index + 1,
+    lat: Number(spot.lat),
+    lng: Number(spot.lng),
+    detailUrl: `/spots/${spot.slug}/`,
+    googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`,
+  };
+});
+
+const optionSpot = spots.find((item) => item.slug === route.option.slug);
+if (!optionSpot) {
+  throw new Error(`Route option spot not found: ${route.option.slug}`);
+}
+
+const mapData = routeSpots.map(({ order, name, slug, lat, lng, detailUrl }) => ({
+  order,
+  name,
+  slug,
+  lat,
+  lng,
+  detailUrl,
+}));
+const mapDataJson = JSON.stringify(mapData).replace(/</g, "\\u003c");
+const routeGeometry = JSON.parse(routeGeometryRaw);
+const routeGeometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "HOME",
+      item: `${siteUrl}/`,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "響け！ユーフォニアム",
+      item: `${siteUrl}/works/sound-euphonium/`,
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: route.title,
+      item: `${siteUrl}${canonicalPath}`,
+    },
+  ],
+};
+
+const itemListJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: route.title,
+  description,
+  numberOfItems: routeSpots.length,
+  itemListOrder: "https://schema.org/ItemListOrderAscending",
+  itemListElement: routeSpots.map((spot) => ({
+    "@type": "ListItem",
+    position: spot.order,
+    name: spot.name,
+    url: `${siteUrl}${spot.detailUrl}`,
+  })),
+};
+---
+
+<BaseLayout title={title} description={description} canonical={canonicalPath}>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)}></script>
+  <script type="application/ld+json" set:html={JSON.stringify(itemListJsonLd)}></script>
+
+  <main class="route-page">
+    <div class="route-container">
+      <nav class="breadcrumb" aria-label="パンくずリスト">
+        <a href="/">HOME</a>
+        <span aria-hidden="true">/</span>
+        <a href="/works/sound-euphonium/">響け！ユーフォニアム</a>
+        <span aria-hidden="true">/</span>
+        <span>宇治半日コース</span>
+      </nav>
+
+      <header class="route-hero">
+        <h1>
+          <span>響け！ユーフォニアム</span>
+          宇治・半日モデルコース
+        </h1>
+        <p class="hero-lead">JR宇治駅から大吉山を巡り、京阪宇治駅へ向かう徒歩コース。</p>
+
+        <dl class="route-facts" aria-label="コース概要">
+          <div><dt>所要時間</dt><dd>約4時間半</dd></div>
+          <div><dt>徒歩距離</dt><dd>約4.5〜5km</dd></div>
+          <div><dt>START</dt><dd>JR宇治駅</dd></div>
+          <div><dt>GOAL</dt><dd>京阪宇治駅</dd></div>
+        </dl>
+
+        <ul class="route-tags" aria-label="コースの特徴">
+          <li>9スポット</li>
+          <li>徒歩中心</li>
+          <li>大吉山あり</li>
+          <li>現地通し検証前</li>
+        </ul>
+
+        <a class="map-cta" href="#route-map" data-route-action="open-map">
+          地図とルートを見る
+          <span aria-hidden="true">↓</span>
+        </a>
+      </header>
+
+      <aside class="verification-notice" aria-label="試作ルートについての注意">
+        <strong>現地での通し検証は未実施です</strong>
+        <p>
+          このルートは公開情報と地図データを基にした試作です。営業時間、通行状況、登山道の状態は、出発直前に各施設・自治体などの公式情報で確認してください。
+        </p>
+      </aside>
+
+      <section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading">
+        <div class="section-heading">
+          <p class="section-label">ルート地図</p>
+          <h2 id="route-map-heading">9スポットの位置関係</h2>
+          <p>道に沿った参考ルートです。徒歩ナビではありません。工事・通行止め・登山道の状態などにより、現地では経路が異なる場合があります。</p>
+        </div>
+        <div class="route-map-shell">
+          <div id="guide-route-map" aria-label="宇治半日モデルコースの地図"></div>
+        </div>
+        <p class="map-attribution-note">
+          地図：<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>・
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>／
+          経路：<a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener noreferrer">FOSSGIS OSRM</a>・
+          <a href="https://www.openstreetmap.org/edit#map=15/34.8915/135.8075" target="_blank" rel="noopener noreferrer">地図を修正</a>
+        </p>
+        <script type="application/json" id="guide-route-map-data" set:html={mapDataJson}></script>
+        <script type="application/json" id="guide-route-geometry-data" set:html={routeGeometryJson}></script>
+      </section>
+
+      <section class="route-section" aria-labelledby="route-order-heading">
+        <div class="section-heading">
+          <p class="section-label">時刻と順番</p>
+          <h2 id="route-order-heading">10:00出発の推奨ルート</h2>
+          <p>西岸を南から北へ巡り、朝霧橋側で東岸へ渡ったあと、大吉山を往復して京阪宇治駅へ向かいます。</p>
+        </div>
+
+        <ol class="route-timeline">
+          {routeSpots.map((spot) => (
+            <li class="timeline-item">
+              <div class="timeline-marker" aria-hidden="true">{spot.order}</div>
+              <article class="timeline-card">
+                <div class="timeline-head">
+                  <div>
+                    <p class="arrival">到着目安 <time>{spot.arrival}</time></p>
+                    <h3>{spot.name}</h3>
+                  </div>
+                  <span class="stay-badge">滞在 {spot.stay}</span>
+                </div>
+
+                <dl class="step-meta">
+                  <div>
+                    <dt>次の地点まで</dt>
+                    <dd>{spot.nextWalk}</dd>
+                  </div>
+                </dl>
+
+                <p class="step-note">{spot.note}</p>
+
+                <div class="step-actions">
+                  <a href={spot.detailUrl} data-route-action="open-spot">スポット詳細</a>
+                  <a
+                    href={spot.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-route-action="open-google-maps"
+                  >Google Mapsで検索</a>
+                </div>
+              </article>
+
+              {spot.breakAfter && (
+                <aside class="break-card">
+                  <p>{spot.breakAfter.time}</p>
+                  <h3>{spot.breakAfter.title}</h3>
+                  <span>{spot.breakAfter.description}</span>
+                </aside>
+              )}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="route-section option-section" aria-labelledby="option-heading">
+        <div class="option-badge">追加オプション</div>
+        <h2 id="option-heading">{route.option.title}</h2>
+        <p>{route.option.description}</p>
+        <p>{route.option.plan}</p>
+        <div class="step-actions">
+          <a href={`/spots/${optionSpot.slug}/`} data-route-action="open-spot">水管橋周辺の詳細</a>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${optionSpot.lat},${optionSpot.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-route-action="open-google-maps"
+          >Google Mapsで検索</a>
+        </div>
+      </section>
+
+      <section class="route-section check-section" aria-labelledby="check-heading">
+        <div class="section-heading">
+          <p class="section-label">出発前の確認</p>
+          <h2 id="check-heading">出発前に確認すること</h2>
+        </div>
+        <ul>
+          <li>大吉山は市街地とは異なる登山道です。歩きやすい靴、飲料、日没までの余裕を確保してください。</li>
+          <li>雨天・増水・倒木・工事などにより、川沿いや登山道を通れない場合があります。</li>
+          <li>観光案内所と神社の利用時間、祭事による制限は当日の公式情報を確認してください。</li>
+          <li>撮影時も参拝者、地域住民、一般の歩行者を優先してください。</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <style>
+    .route-page {
+      --guide-bg: #f6f4ef;
+      --guide-card: #ffffff;
+      --guide-text: #2f3437;
+      --guide-sub: #6f7477;
+      --guide-border: #ddd8cf;
+      --guide-accent: #456f73;
+      --guide-accent-soft: #e8efee;
+      --guide-notice-bg: #f5efe2;
+      --guide-notice-text: #6e5732;
+      padding: 36px 20px 80px;
+      background: var(--guide-bg);
+      color: var(--guide-text);
+    }
+    .route-container { width: min(100%, 980px); margin: 0 auto; }
+    .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; color: var(--guide-sub); font-size: 13px; }
+    .breadcrumb a { color: var(--guide-accent); font-weight: 700; }
+    .route-hero { padding: clamp(28px, 5vw, 52px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
+    .route-hero h1 { max-width: 820px; font-size: clamp(31px, 5.5vw, 50px); line-height: 1.25; }
+    .route-hero h1 span { display: block; margin-bottom: 5px; color: var(--guide-sub); font-size: .48em; font-weight: 700; letter-spacing: .02em; }
+    .hero-lead { max-width: 680px; margin: 16px 0 0; color: var(--guide-sub); font-size: 16px; }
+    .route-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 32px 0 0; border-top: 1px solid var(--guide-border); border-bottom: 1px solid var(--guide-border); }
+    .route-facts div { min-width: 0; padding: 20px 18px; }
+    .route-facts div + div { border-left: 1px solid var(--guide-border); }
+    .route-facts dt { color: var(--guide-sub); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+    .route-facts dd { margin: 5px 0 0; font-size: clamp(18px, 2.5vw, 25px); font-weight: 800; line-height: 1.35; }
+    .route-tags { display: flex; flex-wrap: wrap; gap: 0; margin: 15px 0 0; padding: 0; color: var(--guide-sub); list-style: none; }
+    .route-tags li { padding: 0 13px; font-size: 12px; line-height: 1.5; }
+    .route-tags li:first-child { padding-left: 0; }
+    .route-tags li + li { border-left: 1px solid var(--guide-border); }
+    .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 13px 19px; border-radius: 4px; background: #31575a; color: #fff; font-weight: 800; }
+    .map-cta span { font-size: 18px; }
+    .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
+    .verification-notice strong, .verification-notice p { color: var(--guide-notice-text); }
+    .verification-notice p { margin: 4px 0 0; }
+    .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
+    .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+    .section-heading h2, .option-section h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
+    .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
+    .route-timeline { margin: 30px 0 0; padding: 0; list-style: none; }
+    .timeline-item { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 14px; padding-bottom: 18px; }
+    .timeline-item:not(:last-child)::before { content: ""; position: absolute; top: 42px; bottom: -5px; left: 22px; width: 1px; background: var(--guide-border); }
+    .timeline-marker { position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--guide-accent); color: #fff; font-weight: 900; }
+    .timeline-card { min-width: 0; padding: 20px; border: 1px solid var(--guide-border); border-radius: 5px; background: var(--guide-card); }
+    .timeline-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .arrival { margin: 0 0 4px; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+    .arrival time { font-size: 16px; }
+    .timeline-head h3 { margin: 0; font-size: 20px; }
+    .stay-badge { flex: 0 0 auto; padding-left: 10px; border-left: 1px solid var(--guide-border); color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+    .option-badge { display: inline-block; margin-bottom: 10px; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+    .step-meta { margin: 14px 0 0; }
+    .step-meta div { display: flex; align-items: baseline; gap: 10px; }
+    .step-meta dt { color: var(--guide-sub); font-size: 12px; font-weight: 700; }
+    .step-meta dd { margin: 0; font-weight: 900; }
+    .step-note { margin: 12px 0 0; color: var(--guide-sub); font-size: 14px; }
+    .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .step-actions a { padding: 8px 11px; border: 1px solid var(--guide-border); border-radius: 3px; background: #fff; color: var(--guide-accent); font-size: 13px; font-weight: 800; }
+    .break-card { grid-column: 2; margin-top: 10px; padding: 14px 16px; border-left: 3px solid var(--guide-accent); background: var(--guide-accent-soft); }
+    .break-card p { margin: 0; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+    .break-card h3 { margin: 2px 0; font-size: 17px; }
+    .break-card span { color: var(--guide-sub); font-size: 13px; }
+    .map-section { scroll-margin-top: 88px; }
+    .route-map-shell { height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+    #guide-route-map { width: 100%; height: 100%; }
+    .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 11px; }
+    .map-attribution-note a { text-decoration: underline; }
+    :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #456f73; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.22); cursor: pointer; }
+    :global(.maplibregl-popup-content) { padding: 12px 14px; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; }
+    :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 13px; }
+    :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 12px; font-weight: 800; }
+    .option-section { background: var(--guide-accent-soft); }
+    .option-section p { color: var(--guide-sub); }
+    .check-section ul { margin: 20px 0 0; padding-left: 20px; }
+    .check-section li + li { margin-top: 8px; }
+    @media (max-width: 720px) {
+      .route-page { padding: 18px 12px 56px; }
+      .route-hero { padding: 26px 18px 28px; }
+      .route-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .route-facts div { padding: 16px 10px; }
+      .route-facts div + div { border-left: 0; }
+      .route-facts div:nth-child(even) { border-left: 1px solid var(--guide-border); }
+      .route-facts div:nth-child(n + 3) { border-top: 1px solid var(--guide-border); }
+      .route-facts dd { font-size: 19px; }
+      .route-tags li { padding: 0 8px; font-size: 11px; }
+      .map-cta { width: 100%; justify-content: center; }
+      .route-section { padding: 20px 14px; }
+      .timeline-item { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }
+      .timeline-item:not(:last-child)::before { left: 18px; }
+      .timeline-marker { width: 38px; height: 38px; }
+      .timeline-card { padding: 16px 14px; }
+      .timeline-head { display: block; }
+      .stay-badge { display: inline-block; margin-top: 9px; }
+      .break-card { grid-column: 2; }
+      .route-map-shell { min-height: 360px; }
+    }
+  </style>
+
+  <script>
+    import maplibregl from "maplibre-gl";
+    import "maplibre-gl/dist/maplibre-gl.css";
+
+    const dataElement = document.getElementById("guide-route-map-data");
+    const routeLocations = JSON.parse(dataElement?.textContent || "[]");
+    const geometryElement = document.getElementById("guide-route-geometry-data");
+    const savedRouteGeometry = JSON.parse(geometryElement?.textContent || "null");
+    const mapContainer = document.getElementById("guide-route-map");
+
+    if (mapContainer && routeLocations.length) {
+      const map = new maplibregl.Map({
+        container: mapContainer,
+        style: "https://tiles.openfreemap.org/styles/positron",
+        center: [135.8075, 34.8915],
+        zoom: 14,
+        attributionControl: true,
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+      routeLocations.forEach((location) => {
+        const markerElement = document.createElement("button");
+        markerElement.className = "route-map-marker";
+        markerElement.type = "button";
+        markerElement.textContent = String(location.order);
+        markerElement.setAttribute("aria-label", `${location.order}. ${location.name}`);
+
+        const popupContent = document.createElement("div");
+        const popupName = document.createElement("strong");
+        const popupLink = document.createElement("a");
+        popupName.textContent = `${location.order}. ${location.name}`;
+        popupLink.href = location.detailUrl;
+        popupLink.textContent = "スポット詳細";
+        popupLink.dataset.routeAction = "open-spot";
+        popupContent.append(popupName, popupLink);
+
+        const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
+        new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
+          .setLngLat([location.lng, location.lat])
+          .setPopup(popup)
+          .addTo(map);
+      });
+
+      map.on("load", () => {
+        map.addSource("guide-route", {
+          type: "geojson",
+          data: savedRouteGeometry,
+        });
+        map.addLayer({
+          id: "guide-route-line",
+          type: "line",
+          source: "guide-route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#456f73",
+            "line-width": 3,
+            "line-opacity": 0.82,
+            "line-dasharray": [1.5, 1.2],
+          },
+        });
+
+        const routeCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
+        const bounds = new maplibregl.LngLatBounds();
+        routeLocations.forEach((location) => bounds.extend([location.lng, location.lat]));
+        routeCoordinates.forEach((coordinate) => bounds.extend(coordinate));
+        map.fitBounds(bounds, { padding: 54, maxZoom: 15, duration: 0 });
+      });
+    }
+  </script>
+</BaseLayout>
