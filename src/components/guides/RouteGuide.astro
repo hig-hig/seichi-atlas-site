@@ -1,0 +1,237 @@
+---
+import GuideRouteMap from "./GuideRouteMap.astro";
+
+const {
+  route,
+  routeSpots,
+  optionSpot,
+  routeGeometry,
+  content,
+} = Astro.props;
+
+const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl }) => ({
+  order,
+  name,
+  slug,
+  lat,
+  lng,
+  detailUrl,
+}));
+---
+
+<main class="route-page">
+  <div class="route-container">
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      {content.breadcrumbs.map((item, index) => (
+        <>
+          {item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}
+          {index < content.breadcrumbs.length - 1 && <span aria-hidden="true">/</span>}
+        </>
+      ))}
+    </nav>
+
+    <header class="route-hero">
+      <h1>
+        <span>{content.hero.workTitle}</span>
+        {content.hero.courseTitle}
+      </h1>
+      <p class="hero-lead">{content.hero.lead}</p>
+
+      <dl class="route-facts" aria-label="コース概要">
+        {content.hero.facts.map((fact) => (
+          <div><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+        ))}
+      </dl>
+
+      <ul class="route-tags" aria-label="コースの特徴">
+        {content.hero.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+
+      <a class="map-cta" href="#route-map" data-route-action="open-map">
+        地図とルートを見る
+        <span aria-hidden="true">↓</span>
+      </a>
+    </header>
+
+    <aside class="verification-notice" aria-label="試作ルートについての注意">
+      <strong>{content.verification.title}</strong>
+      <p>{content.verification.description}</p>
+    </aside>
+
+    <GuideRouteMap
+      locations={mapLocations}
+      routeGeometry={routeGeometry}
+      sectionTitle={content.map.title}
+      description={content.map.description}
+      mapAriaLabel={content.map.ariaLabel}
+      editMapUrl={content.map.editUrl}
+      initialCenter={content.map.initialCenter}
+    />
+
+    <section class="route-section" aria-labelledby="route-order-heading">
+      <div class="section-heading">
+        <p class="section-label">時刻と順番</p>
+        <h2 id="route-order-heading">{content.timeline.title}</h2>
+        <p>{content.timeline.description}</p>
+      </div>
+
+      <ol class="route-timeline">
+        {routeSpots.map((spot) => (
+          <li class="timeline-item">
+            <div class="timeline-marker" aria-hidden="true">{spot.order}</div>
+            <article class="timeline-card">
+              <div class="timeline-head">
+                <div>
+                  <p class="arrival">到着目安 <time>{spot.arrival}</time></p>
+                  <h3>{spot.name}</h3>
+                </div>
+                <span class="stay-badge">滞在 {spot.stay}</span>
+              </div>
+
+              <dl class="step-meta">
+                <div>
+                  <dt>次の地点まで</dt>
+                  <dd>{spot.nextWalk}</dd>
+                </div>
+              </dl>
+
+              <p class="step-note">{spot.note}</p>
+
+              <div class="step-actions">
+                <a href={spot.detailUrl} data-route-action="open-spot">スポット詳細</a>
+                <a
+                  href={spot.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-route-action="open-google-maps"
+                >Google Mapsで検索</a>
+              </div>
+            </article>
+
+            {spot.breakAfter && (
+              <aside class="break-card">
+                <p>{spot.breakAfter.time}</p>
+                <h3>{spot.breakAfter.title}</h3>
+                <span>{spot.breakAfter.description}</span>
+              </aside>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="route-section option-section" aria-labelledby="option-heading">
+      <div class="option-badge">追加オプション</div>
+      <h2 id="option-heading">{route.option.title}</h2>
+      <p>{route.option.description}</p>
+      <p>{route.option.plan}</p>
+      <div class="step-actions">
+        <a href={`/spots/${optionSpot.slug}/`} data-route-action="open-spot">{route.option.linkLabel}</a>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${optionSpot.lat},${optionSpot.lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-route-action="open-google-maps"
+        >Google Mapsで検索</a>
+      </div>
+    </section>
+
+    <section class="route-section check-section" aria-labelledby="check-heading">
+      <div class="section-heading">
+        <p class="section-label">出発前の確認</p>
+        <h2 id="check-heading">出発前に確認すること</h2>
+      </div>
+      <ul>
+        {content.checkItems.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+  </div>
+</main>
+
+<style>
+  .route-page {
+    --guide-bg: #f6f4ef;
+    --guide-card: #ffffff;
+    --guide-text: #2f3437;
+    --guide-sub: #6f7477;
+    --guide-border: #ddd8cf;
+    --guide-accent: #456f73;
+    --guide-accent-soft: #e8efee;
+    --guide-notice-bg: #f5efe2;
+    --guide-notice-text: #6e5732;
+    padding: 36px 20px 80px;
+    background: var(--guide-bg);
+    color: var(--guide-text);
+  }
+  .route-container { width: min(100%, 980px); margin: 0 auto; }
+  .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; color: var(--guide-sub); font-size: 13px; }
+  .breadcrumb a { color: var(--guide-accent); font-weight: 700; }
+  .route-hero { padding: clamp(28px, 5vw, 52px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
+  .route-hero h1 { max-width: 820px; font-size: clamp(31px, 5.5vw, 50px); line-height: 1.25; }
+  .route-hero h1 span { display: block; margin-bottom: 5px; color: var(--guide-sub); font-size: .48em; font-weight: 700; letter-spacing: .02em; }
+  .hero-lead { max-width: 680px; margin: 16px 0 0; color: var(--guide-sub); font-size: 16px; }
+  .route-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 32px 0 0; border-top: 1px solid var(--guide-border); border-bottom: 1px solid var(--guide-border); }
+  .route-facts div { min-width: 0; padding: 20px 18px; }
+  .route-facts div + div { border-left: 1px solid var(--guide-border); }
+  .route-facts dt { color: var(--guide-sub); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+  .route-facts dd { margin: 5px 0 0; font-size: clamp(18px, 2.5vw, 25px); font-weight: 800; line-height: 1.35; }
+  .route-tags { display: flex; flex-wrap: wrap; gap: 0; margin: 15px 0 0; padding: 0; color: var(--guide-sub); list-style: none; }
+  .route-tags li { padding: 0 13px; font-size: 12px; line-height: 1.5; }
+  .route-tags li:first-child { padding-left: 0; }
+  .route-tags li + li { border-left: 1px solid var(--guide-border); }
+  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 13px 19px; border-radius: 4px; background: #31575a; color: #fff; font-weight: 800; }
+  .map-cta span { font-size: 18px; }
+  .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
+  .verification-notice strong, .verification-notice p { color: var(--guide-notice-text); }
+  .verification-notice p { margin: 4px 0 0; }
+  .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .section-heading h2, .option-section h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
+  .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
+  .route-timeline { margin: 30px 0 0; padding: 0; list-style: none; }
+  .timeline-item { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 14px; padding-bottom: 18px; }
+  .timeline-item:not(:last-child)::before { content: ""; position: absolute; top: 42px; bottom: -5px; left: 22px; width: 1px; background: var(--guide-border); }
+  .timeline-marker { position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--guide-accent); color: #fff; font-weight: 900; }
+  .timeline-card { min-width: 0; padding: 20px; border: 1px solid var(--guide-border); border-radius: 5px; background: var(--guide-card); }
+  .timeline-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .arrival { margin: 0 0 4px; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+  .arrival time { font-size: 16px; }
+  .timeline-head h3 { margin: 0; font-size: 20px; }
+  .stay-badge { flex: 0 0 auto; padding-left: 10px; border-left: 1px solid var(--guide-border); color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+  .option-badge { display: inline-block; margin-bottom: 10px; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+  .step-meta { margin: 14px 0 0; }
+  .step-meta div { display: flex; align-items: baseline; gap: 10px; }
+  .step-meta dt { color: var(--guide-sub); font-size: 12px; font-weight: 700; }
+  .step-meta dd { margin: 0; font-weight: 900; }
+  .step-note { margin: 12px 0 0; color: var(--guide-sub); font-size: 14px; }
+  .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .step-actions a { padding: 8px 11px; border: 1px solid var(--guide-border); border-radius: 3px; background: #fff; color: var(--guide-accent); font-size: 13px; font-weight: 800; }
+  .break-card { grid-column: 2; margin-top: 10px; padding: 14px 16px; border-left: 3px solid var(--guide-accent); background: var(--guide-accent-soft); }
+  .break-card p { margin: 0; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
+  .break-card h3 { margin: 2px 0; font-size: 17px; }
+  .break-card span { color: var(--guide-sub); font-size: 13px; }
+  .option-section { background: var(--guide-accent-soft); }
+  .option-section p { color: var(--guide-sub); }
+  .check-section ul { margin: 20px 0 0; padding-left: 20px; }
+  .check-section li + li { margin-top: 8px; }
+  @media (max-width: 720px) {
+    .route-page { padding: 18px 12px 56px; }
+    .route-hero { padding: 26px 18px 28px; }
+    .route-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .route-facts div { padding: 16px 10px; }
+    .route-facts div + div { border-left: 0; }
+    .route-facts div:nth-child(even) { border-left: 1px solid var(--guide-border); }
+    .route-facts div:nth-child(n + 3) { border-top: 1px solid var(--guide-border); }
+    .route-facts dd { font-size: 19px; }
+    .route-tags li { padding: 0 8px; font-size: 11px; }
+    .map-cta { width: 100%; justify-content: center; }
+    .route-section { padding: 20px 14px; }
+    .timeline-item { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }
+    .timeline-item:not(:last-child)::before { left: 18px; }
+    .timeline-marker { width: 38px; height: 38px; }
+    .timeline-card { padding: 16px 14px; }
+    .timeline-head { display: block; }
+    .stay-badge { display: inline-block; margin-top: 9px; }
+    .break-card { grid-column: 2; }
+  }
+</style>

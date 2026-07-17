@@ -1,0 +1,125 @@
+---
+const {
+  locations,
+  routeGeometry,
+  sectionTitle,
+  description,
+  mapAriaLabel,
+  editMapUrl,
+  initialCenter,
+} = Astro.props;
+
+const locationsJson = JSON.stringify(locations).replace(/</g, "\\u003c");
+const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
+---
+
+<section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading">
+  <div class="section-heading">
+    <p class="section-label">ルート地図</p>
+    <h2 id="route-map-heading">{sectionTitle}</h2>
+    <p>{description}</p>
+  </div>
+  <div class="route-map-shell">
+    <div id="guide-route-map" aria-label={mapAriaLabel} data-initial-center={JSON.stringify(initialCenter)}></div>
+  </div>
+  <p class="map-attribution-note">
+    地図：<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>・
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>／
+    経路：<a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener noreferrer">FOSSGIS OSRM</a>・
+    <a href={editMapUrl} target="_blank" rel="noopener noreferrer">地図を修正</a>
+  </p>
+  <script type="application/json" id="guide-route-map-data" set:html={locationsJson}></script>
+  <script type="application/json" id="guide-route-geometry-data" set:html={geometryJson}></script>
+</section>
+
+<style>
+  .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
+  .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
+  .map-section { scroll-margin-top: 88px; }
+  .route-map-shell { height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+  #guide-route-map { width: 100%; height: 100%; }
+  .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 11px; }
+  .map-attribution-note a { text-decoration: underline; }
+  :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #456f73; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.22); cursor: pointer; }
+  :global(.maplibregl-popup-content) { padding: 12px 14px; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; }
+  :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 13px; }
+  :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 12px; font-weight: 800; }
+  @media (max-width: 720px) {
+    .route-section { padding: 20px 14px; }
+    .route-map-shell { min-height: 360px; }
+  }
+</style>
+
+<script>
+  import maplibregl from "maplibre-gl";
+  import "maplibre-gl/dist/maplibre-gl.css";
+
+  const dataElement = document.getElementById("guide-route-map-data");
+  const routeLocations = JSON.parse(dataElement?.textContent || "[]");
+  const geometryElement = document.getElementById("guide-route-geometry-data");
+  const savedRouteGeometry = JSON.parse(geometryElement?.textContent || "null");
+  const mapContainer = document.getElementById("guide-route-map");
+  const initialCenter = JSON.parse(mapContainer?.dataset.initialCenter || "[0,0]");
+
+  if (mapContainer && routeLocations.length) {
+    const map = new maplibregl.Map({
+      container: mapContainer,
+      style: "https://tiles.openfreemap.org/styles/positron",
+      center: initialCenter,
+      zoom: 14,
+      attributionControl: true,
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+    routeLocations.forEach((location) => {
+      const markerElement = document.createElement("button");
+      markerElement.className = "route-map-marker";
+      markerElement.type = "button";
+      markerElement.textContent = String(location.order);
+      markerElement.setAttribute("aria-label", `${location.order}. ${location.name}`);
+
+      const popupContent = document.createElement("div");
+      const popupName = document.createElement("strong");
+      const popupLink = document.createElement("a");
+      popupName.textContent = `${location.order}. ${location.name}`;
+      popupLink.href = location.detailUrl;
+      popupLink.textContent = "スポット詳細";
+      popupLink.dataset.routeAction = "open-spot";
+      popupContent.append(popupName, popupLink);
+
+      const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
+      new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
+        .setLngLat([location.lng, location.lat])
+        .setPopup(popup)
+        .addTo(map);
+    });
+
+    map.on("load", () => {
+      map.addSource("guide-route", {
+        type: "geojson",
+        data: savedRouteGeometry,
+      });
+      map.addLayer({
+        id: "guide-route-line",
+        type: "line",
+        source: "guide-route",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#456f73",
+          "line-width": 3,
+          "line-opacity": 0.82,
+          "line-dasharray": [1.5, 1.2],
+        },
+      });
+
+      const routeCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
+      const bounds = new maplibregl.LngLatBounds();
+      routeLocations.forEach((location) => bounds.extend([location.lng, location.lat]));
+      routeCoordinates.forEach((coordinate) => bounds.extend(coordinate));
+      map.fitBounds(bounds, { padding: 54, maxZoom: 15, duration: 0 });
+    });
+  }
+</script>

@@ -1,5 +1,48 @@
 export const soundEuphoniumUjiHalfDay = {
   slug: "sound-euphonium-uji-half-day",
+  guide: {
+    canonicalPath: "/guides/sound-euphonium-uji-half-day/",
+    seoTitle: "響け！ユーフォニアム宇治聖地巡礼モデルコース｜大吉山を巡る半日ルート",
+    seoDescription: "JR宇治駅から縣神社、あじろぎの道、宇治神社、宇治上神社、大吉山展望台、宇治橋を経て京阪宇治駅へ向かう、徒歩約4〜5時間のモデルコース。",
+    breadcrumbs: [
+      { label: "HOME", href: "/" },
+      { label: "響け！ユーフォニアム", href: "/works/sound-euphonium/" },
+      { label: "宇治半日コース" },
+    ],
+    hero: {
+      workTitle: "響け！ユーフォニアム",
+      courseTitle: "宇治・半日モデルコース",
+      lead: "JR宇治駅から大吉山を巡り、京阪宇治駅へ向かう徒歩コース。",
+      facts: [
+        { label: "所要時間", value: "約4時間半" },
+        { label: "徒歩距離", value: "約4.5〜5km" },
+        { label: "START", value: "JR宇治駅" },
+        { label: "GOAL", value: "京阪宇治駅" },
+      ],
+      tags: ["9スポット", "徒歩中心", "大吉山あり", "現地通し検証前"],
+    },
+    verification: {
+      title: "現地での通し検証は未実施です",
+      description: "このルートは公開情報と地図データを基にした試作です。営業時間、通行状況、登山道の状態は、出発直前に各施設・自治体などの公式情報で確認してください。",
+    },
+    map: {
+      title: "9スポットの位置関係",
+      description: "道に沿った参考ルートです。徒歩ナビではありません。工事・通行止め・登山道の状態などにより、現地では経路が異なる場合があります。",
+      ariaLabel: "宇治半日モデルコースの地図",
+      editUrl: "https://www.openstreetmap.org/edit#map=15/34.8915/135.8075",
+      initialCenter: [135.8075, 34.8915],
+    },
+    timeline: {
+      title: "10:00出発の推奨ルート",
+      description: "西岸を南から北へ巡り、朝霧橋側で東岸へ渡ったあと、大吉山を往復して京阪宇治駅へ向かいます。",
+    },
+    checkItems: [
+      "大吉山は市街地とは異なる登山道です。歩きやすい靴、飲料、日没までの余裕を確保してください。",
+      "雨天・増水・倒木・工事などにより、川沿いや登山道を通れない場合があります。",
+      "観光案内所と神社の利用時間、祭事による制限は当日の公式情報を確認してください。",
+      "撮影時も参拝者、地域住民、一般の歩行者を優先してください。",
+    ],
+  },
   title: "響け！ユーフォニアム宇治聖地巡礼・半日モデルコース",
   duration: "約4時間20分〜4時間50分",
   distance: "約4.5〜5.0km",
@@ -84,6 +127,7 @@ export const soundEuphoniumUjiHalfDay = {
   option: {
     slug: "uji-river-riverside",
     title: "宇治川河川敷（水管橋）を追加する場合",
+    linkLabel: "水管橋周辺の詳細",
     description: "中心部から離れ、基本コースに組み込むと4〜5時間の枠を超えやすいため、三室戸駅から別に往復する追加オプションとします。",
     plan: "三室戸駅から徒歩で往復し、見学を含めて約35〜50分を別枠で見込んでください。",
   },
