@@ -29,17 +29,35 @@ const supportFacilitiesJson = JSON.stringify(supportFacilities.map((facility) =>
   markerVariant: facility.categories.includes("rest")
     ? "rest"
     : facility.categories.includes("toilet") ? "information-toilet" : "information",
+  markerLayer: facility.categories.includes("rest") ? "rest" : "tourist-information",
   verificationSummary: `${formatJapaneseDate(facility.sourceUpdatedAt)}更新の公式情報を、${formatJapaneseDate(facility.verifiedAt)}に確認`,
   fieldCheckLabel: facility.fieldChecked ? "現地確認済み" : "現地未確認",
 }))).replace(/</g, "\\u003c");
 const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
 ---
 
-<section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading">
+<section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading" tabindex="-1">
   <div class="section-heading">
     <p class="section-label">ルート地図</p>
     <h2 id="route-map-heading">{sectionTitle}</h2>
     <p>{description}</p>
+  </div>
+  <div class="map-layer-controls" aria-label="地図の表示切替">
+    <button type="button" aria-pressed="true" data-map-layer="spots" data-route-action="toggle-map-layer" data-route-target="spots:visible">
+      <span class="map-layer-check" aria-hidden="true">✓</span>
+      <span>聖地スポット</span>
+      <small>表示中</small>
+    </button>
+    <button type="button" aria-pressed="true" data-map-layer="rest" data-route-action="toggle-map-layer" data-route-target="rest:visible">
+      <span class="map-layer-check" aria-hidden="true">✓</span>
+      <span>トイレ・休憩</span>
+      <small>表示中</small>
+    </button>
+    <button type="button" aria-pressed="true" data-map-layer="tourist-information" data-route-action="toggle-map-layer" data-route-target="tourist-information:visible">
+      <span class="map-layer-check" aria-hidden="true">✓</span>
+      <span>観光案内</span>
+      <small>表示中</small>
+    </button>
   </div>
   <div class="route-map-shell">
     <div id="guide-route-map" aria-label={mapAriaLabel} data-initial-center={JSON.stringify(initialCenter)}></div>
@@ -61,6 +79,12 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
   .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
   .map-section { scroll-margin-top: 88px; }
+  .map-section:focus { outline: none; }
+  .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--guide-accent); border-radius: 4px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
+  .map-layer-controls button:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
+  .map-layer-controls small { font-size: 10px; font-weight: 700; }
   .route-map-shell { height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
   #guide-route-map { width: 100%; height: 100%; }
   .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 11px; }
@@ -80,6 +104,9 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 12px; font-weight: 800; }
   @media (max-width: 720px) {
     .route-section { padding: 20px 14px; }
+    .map-layer-controls { display: grid; grid-template-columns: 1fr; }
+    .map-layer-controls button { width: 100%; justify-content: flex-start; }
+    .map-layer-controls small { margin-left: auto; }
     .route-map-shell { min-height: 360px; }
   }
 </style>
@@ -96,6 +123,11 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   const savedRouteGeometry = JSON.parse(geometryElement?.textContent || "null");
   const mapContainer = document.getElementById("guide-route-map");
   const initialCenter = JSON.parse(mapContainer?.dataset.initialCenter || "[0,0]");
+  const layerMarkers = {
+    spots: [],
+    rest: [],
+    "tourist-information": [],
+  };
 
   if (mapContainer && routeLocations.length) {
     const map = new maplibregl.Map({
@@ -125,10 +157,11 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       popupContent.append(popupName, popupLink);
 
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
-      new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
+      const marker = new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
         .addTo(map);
+      layerMarkers.spots.push(marker);
     });
 
     supportFacilities.forEach((facility) => {
@@ -187,10 +220,28 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       }
 
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
-      new maplibregl.Marker({ element: markerElement, anchor: "bottom", offset: [54, 0] })
+      const marker = new maplibregl.Marker({ element: markerElement, anchor: "bottom", offset: [54, 0] })
         .setLngLat([facility.lng, facility.lat])
         .setPopup(popup)
         .addTo(map);
+      layerMarkers[facility.markerLayer].push(marker);
+    });
+
+    document.querySelectorAll("[data-map-layer]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const layer = button.dataset.mapLayer;
+        const visible = button.getAttribute("aria-pressed") !== "true";
+        button.setAttribute("aria-pressed", String(visible));
+        button.querySelector(".map-layer-check").textContent = visible ? "✓" : "—";
+        button.querySelector("small").textContent = visible ? "表示中" : "非表示";
+        button.dataset.routeTarget = `${layer}:${visible ? "visible" : "hidden"}`;
+        button.dataset.routeLayer = layer;
+        button.dataset.routeVisible = String(visible);
+        layerMarkers[layer].forEach((marker) => {
+          marker.getElement().hidden = !visible;
+          if (!visible) marker.getPopup()?.remove();
+        });
+      });
     });
 
     map.on("load", () => {

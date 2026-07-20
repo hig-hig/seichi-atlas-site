@@ -2,15 +2,16 @@ const sentEvents = new Set();
 
 /**
  * Pushes a route event only when an existing analytics dataLayer is available.
- * Each event key is sent at most once per page view.
+ * Each event key is sent at most once per page view. Pass null for repeatable events.
  */
 export function sendRouteEvent(event, parameters = {}, uniqueKey = event) {
-  if (sentEvents.has(uniqueKey)) return;
+  const shouldDeduplicate = uniqueKey !== null;
+  if (shouldDeduplicate && sentEvents.has(uniqueKey)) return;
 
   const dataLayer = window.dataLayer;
   if (!Array.isArray(dataLayer)) return;
 
-  sentEvents.add(uniqueKey);
+  if (shouldDeduplicate) sentEvents.add(uniqueKey);
   dataLayer.push({
     event,
     page_path: window.location.pathname,
@@ -59,10 +60,16 @@ export function setupRouteAnalytics() {
     const target = actionLink.dataset.routeTarget || actionLink.getAttribute("href");
     if (!action || !target) return;
 
+    const parameters = { route_action: action, route_target: target };
+    if (actionLink.dataset.routeLayer) {
+      parameters.route_layer = actionLink.dataset.routeLayer;
+      parameters.route_visible = actionLink.dataset.routeVisible === "true";
+    }
+
     sendRouteEvent(
       "route_action",
-      { route_action: action, route_target: target },
-      `route-action:${action}:${target}`,
+      parameters,
+      action === "toggle-map-layer" ? null : `route-action:${action}:${target}`,
     );
   });
 

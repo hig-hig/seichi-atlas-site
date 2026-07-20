@@ -25,6 +25,32 @@ export const soundEuphoniumUjiHalfDay = {
       title: "現地での通し検証は未実施です",
       description: "このルートは公開情報と地図データを基にした試作です。営業時間、通行状況、登山道の状態は、出発直前に各施設・自治体などの公式情報で確認してください。",
     },
+    routeChoices: {
+      title: "今の状況から選ぶ",
+      items: [
+        {
+          title: "標準ルート",
+          time: "約4時間30分",
+          description: "全スポット",
+          href: "#route-map",
+          action: "select-standard-route",
+        },
+        {
+          title: "大吉山なし短縮",
+          time: "約3時間15分〜3時間45分",
+          description: "約65分短縮",
+          href: "#short-route-guide",
+          action: "select-short-route",
+        },
+        {
+          title: "雨天向け",
+          time: "大吉山を省略",
+          description: "川沿い・足元に注意",
+          href: "#rain-route-guide",
+          action: "select-rain-route",
+        },
+      ],
+    },
     map: {
       title: "9スポットの位置関係",
       description: "道に沿った参考ルートです。徒歩ナビではありません。工事・通行止め・登山道の状態などにより、現地では経路が異なる場合があります。",
@@ -53,10 +79,12 @@ export const soundEuphoniumUjiHalfDay = {
           description: "宇治市観光センターは、宇治市公式情報でバリアフリー型トイレが案内されています。営業時間や設備の利用可否は変更される場合があるため、昼食や大吉山へ向かう前に現地の最新情報を確認してください。",
         },
         {
+          id: "rain-route-guide",
           title: "雨天時の注意",
           description: "川沿いは増水や足元の状態を確認し、水際へ近づかないでください。大吉山は登山道のため、雨天時や路面状態が悪い場合は省略し、通行状況は現地の最新情報を確認してください。",
         },
         {
+          id: "short-route-guide",
           title: "大吉山を省く短縮ルート",
           description: "宇治上神社の次に大吉山展望台へ向かわず、宇治橋、京阪宇治駅の順に進みます。上り約20分、見学20分、下り約15分、下山後休憩10分の計65分を省けるため、全体は約3時間15分〜3時間45分が目安です。宇治上神社から宇治橋までの移動時間は、現地の経路と通行状況で前後します。",
         },
