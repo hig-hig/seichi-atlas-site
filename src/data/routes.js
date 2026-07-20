@@ -25,53 +25,56 @@ export const soundEuphoniumUjiHalfDay = {
       title: "現地での通し検証は未実施です",
       description: "このルートは公開情報と地図データを基にした試作です。営業時間、通行状況、登山道の状態は、出発直前に各施設・自治体などの公式情報で確認してください。",
     },
-    routeChoices: {
-      title: "今の状況から選ぶ",
-      items: [
-        {
-          title: "標準ルート",
-          time: "約4時間30分",
-          description: "全スポット",
-          href: "#route-map",
-          action: "select-standard-route",
-        },
-        {
-          title: "大吉山を省略する短縮ルート",
-          time: "約3時間15分〜3時間45分",
-          description: "約65分短縮",
-          href: "#short-route-guide",
-          action: "select-short-route",
-        },
-        {
-          title: "雨天向け",
-          time: "大吉山を省略",
-          description: "川沿い・足元に注意",
-          href: "#rain-route-guide",
-          action: "select-rain-route",
-        },
+    situationAdjuster: {
+      title: "今の状況に合わせて回り方を調整",
+      description: "天候や歩く量などを選ぶと、確認済みのルート情報から回り方を案内します。この機能では、病名・具体的な健康情報・正確な位置情報は入力・取得しません。選択履歴を端末やアカウントには保存しません。選択項目と提示結果は、利用状況を確認するためのアクセス解析イベントとして記録される場合があります。",
+      commonNotice: "所要時間は目安です。天候、通行状況、施設の利用可否、利用者自身の状態を確認して判断してください。",
+      verification: { fieldWalkCheckedAt: null, measuredDuration: null },
+      situations: [
+        { value: "planned", label: "予定どおり回りたい", recommendation: "standard" },
+        { value: "shortage", label: "時間が足りない", conditionGroup: "shortage" },
+        { value: "extra", label: "時間が余った", conditionGroup: "extra" },
+        { value: "adjust", label: "天候・歩く量を調整したい", conditionGroup: "adjust" },
       ],
-    },
-    recommendation: {
-      title: "今の状況に合うルート提案",
-      description: "現在時刻、使える時間、体力から目安となるルートを案内します。安全や完走を保証するものではありません。",
-      lateTime: "15:30",
-      routes: {
-        standard: { key: "standard", label: "標準ルート", duration: "約4時間30分", href: "#route-map" },
-        short: { key: "short", label: "大吉山を省略する短縮ルート", duration: "約3時間15分〜3時間45分", href: "#short-route-guide" },
-        partial: { key: "partial", label: "一部区間のみ", href: "#route-map", linkLabel: "ルート全体の地図で調整する" },
-        rain: { key: "rain", label: "雨天向け", href: "#rain-route-guide" },
+      conditionGroups: {
+        shortage: {
+          label: "使える時間を選んでください",
+          options: [
+            { value: "within-2h", label: "2時間以内", recommendation: "partial" },
+            { value: "around-3h", label: "3時間程度", recommendation: "short" },
+            { value: "over-4h", label: "4時間以上", recommendation: "standard" },
+          ],
+        },
+        extra: {
+          label: "余っている時間を選んでください",
+          options: [
+            { value: "30m", label: "30分ほど", recommendation: "extra-30m" },
+            { value: "1h", label: "1時間ほど", recommendation: "extra-1h" },
+            { value: "over-2h", label: "2時間以上", recommendation: "extra-2h" },
+          ],
+        },
+        adjust: {
+          label: "調整したい内容を選んでください",
+          options: [
+            { value: "rain", label: "雨が降っている", recommendation: "rain" },
+            { value: "temperature", label: "暑さ・寒さがつらい", recommendation: "temperature" },
+            { value: "less-walking", label: "歩く量を減らしたい", recommendation: "less-walking" },
+            { value: "rest", label: "休憩場所を確認したい", recommendation: "rest" },
+          ],
+        },
       },
-      availableTimeOptions: [
-        { value: "2h", label: "2時間以内" },
-        { value: "3h", label: "3時間程度" },
-        { value: "4h", label: "4時間以上" },
-      ],
-      staminaOptions: [
-        { value: "low", label: "控えめ" },
-        { value: "normal", label: "普通" },
-        { value: "high", label: "問題なし" },
-      ],
-      weatherNote: "天気は自動判定しません。雨天時は、上のクイック選択から「雨天向け」を選び、既存の雨天案内を確認してください。",
+      recommendations: {
+        standard: { label: "標準ルート", timing: "約4時間30分", reason: "予定どおり回る条件として、確認済みの標準ルートを案内します。", constraint: "全行程の所要時間と現地状況を出発前に確認してください。", cta: "標準ルートを地図に反映", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false } },
+        partial: { label: "一部区間のみ", timing: "2時間以内では全ルート完走は難しい条件です。", reason: "出発地点から無理に全行程を回らず、使える時間に合わせて途中で切り上げる案内です。", constraint: "確認済みデータにない終了地点、徒歩時間、経路は提示しません。", cta: "全体地図で回れる範囲を確認", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false } },
+        short: { label: "大吉山を省略する短縮ルート", timing: "約3時間15分〜3時間45分", reason: "宇治上神社の次に大吉山を省略し、宇治橋を経て京阪宇治駅へ向かいます。", constraint: "約65分短縮できる既存案内ですが、3時間以内の完走を保証するものではありません。", cta: "短縮ルートを確認", href: "#short-route-guide", layers: { spots: true, rest: true, "tourist-information": false, exit: true } },
+        "extra-30m": { label: "休憩・観光案内・既存スポットの再確認", timing: "余裕時間：約30分", reason: "新しい訪問先を加えず、休憩や観光案内の利用、既存スポットの再確認に充てる案内です。", constraint: "施設の利用可否と案内時間は現地で確認してください。", cta: "休憩・観光案内を地図に表示", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": true, exit: false } },
+        "extra-1h": { label: "大吉山を追加候補として確認", timing: "大吉山の既存案内：約65分", reason: "大吉山をまだ訪れていない場合に限り、既存ルート上の追加候補として確認できます。", constraint: "時間・天候・歩く量を確認して判断してください。", cta: "大吉山を地図で確認", href: "#route-map", spot: "daikichiyama-observation-deck", layers: { spots: true, rest: true, "tourist-information": false, exit: true } },
+        "extra-2h": { label: "現在のルートと周辺設備を確認", timing: "余裕時間：2時間以上", reason: "このガイドには、追加で案内できる確認済みコースがありません。", constraint: "未確認の訪問先は自動提案せず、現在のルートと確認済み設備だけを表示します。", cta: "現在のルートと周辺設備を確認", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": true, exit: false } },
+        rain: { label: "大吉山を省略する雨天時の回り方", timing: "大吉山を省略", reason: "雨の自己申告に基づき、大吉山を省略する既存案内を提示します。", constraint: "川沿い、足元、増水、通行状況を現地で確認してください。", cta: "雨天時の回り方を確認", href: "#rain-route-guide", layers: { spots: true, rest: true, "tourist-information": true, exit: true } },
+        temperature: { label: "休憩・観光案内を優先", timing: "休憩時間を含めて調整", reason: "暑さ・寒さの自己申告に基づき、確認済みの休憩・観光案内設備を優先表示します。", constraint: "安全性や利用者の状態への適合を判断するものではありません。", cta: "休憩できる場所を地図に表示", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": true, exit: true } },
+        "less-walking": { label: "大吉山を省略する短縮ルート", timing: "約3時間15分〜3時間45分", reason: "歩く量を減らしたいという自己申告に基づき、大吉山を省略する既存案内を提示します。", constraint: "短縮後も徒歩移動を含み、歩く量の適合を保証するものではありません。", cta: "歩く量を減らす回り方を確認", href: "#short-route-guide", layers: { spots: true, rest: true, "tourist-information": false, exit: true } },
+        rest: { label: "休憩・観光案内を確認", timing: "利用時間を現地で確認", reason: "休憩場所を確認したいという自己申告に基づき、確認済み設備を表示します。", constraint: "営業時間や設備の利用可否は変更される場合があります。", cta: "休憩・観光案内を地図に表示", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": true, exit: true } },
+      },
     },
     map: {
       title: "9スポットの位置関係",

@@ -1,0 +1,137 @@
+---
+const { config } = Astro.props;
+const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
+const initialSituation = config.situations[0];
+const initialResult = config.recommendations[initialSituation.recommendation];
+---
+
+<section class="situation-adjuster" aria-labelledby="situation-adjuster-heading" data-situation-adjuster>
+  <div class="section-heading">
+    <p class="section-label">状況を自己申告</p>
+    <h2 id="situation-adjuster-heading">{config.title}</h2>
+    <p>{config.description}</p>
+  </div>
+
+  <div class="situation-options" aria-label="現在の状況">
+    {config.situations.map((situation, index) => (
+      <button
+        type="button"
+        aria-pressed={index === 0 ? "true" : "false"}
+        data-situation={situation.value}
+      >
+        <span class="selection-check" aria-hidden="true">{index === 0 ? "✓" : ""}</span>
+        <span class="selection-label">{situation.label}</span>
+        <small data-selection-status>{index === 0 ? "選択中" : "選択する"}</small>
+      </button>
+    ))}
+  </div>
+
+  {Object.entries(config.conditionGroups).map(([groupId, group]) => (
+    <fieldset class="condition-group" hidden data-condition-group={groupId}>
+      <legend>{group.label}</legend>
+      <div class="condition-options">
+        {group.options.map((option) => (
+          <button type="button" aria-pressed="false" data-condition={option.value}>
+            <span class="selection-check" aria-hidden="true"></span>
+            <span class="selection-label">{option.label}</span>
+            <small data-selection-status>選択する</small>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  ))}
+
+  <article class="situation-result" aria-live="polite" data-situation-result>
+    <p class="result-label">提案する回り方</p>
+    <h3 data-result-title>{initialResult.label}</h3>
+    <dl>
+      <div><dt>時間の目安・注意</dt><dd data-result-timing>{initialResult.timing}</dd></div>
+      <div><dt>選択条件に基づく理由</dt><dd data-result-reason>{initialResult.reason}</dd></div>
+      <div><dt>情報上の制約</dt><dd data-result-constraint>{initialResult.constraint}</dd></div>
+    </dl>
+    <p class="common-notice">{config.commonNotice}</p>
+    <div class="result-actions">
+      <a href={initialResult.href} data-situation-cta>{initialResult.cta}</a>
+      <a hidden data-situation-secondary></a>
+    </div>
+  </article>
+
+  <details class="situation-criteria">
+    <summary>状況別の判定基準を見る</summary>
+    <div class="criteria-list">
+      {Object.values(config.recommendations).map((result) => (
+        <article>
+          <h3>{result.label}</h3>
+          <dl>
+            <div><dt>時間・注意</dt><dd>{result.timing}</dd></div>
+            <div><dt>理由</dt><dd>{result.reason}</dd></div>
+            <div><dt>制約</dt><dd>{result.constraint}</dd></div>
+          </dl>
+        </article>
+      ))}
+    </div>
+  </details>
+
+  <script type="application/json" data-situation-config set:html={configJson}></script>
+</section>
+
+<style>
+  .situation-adjuster { margin-top: 18px; padding: 24px; background: var(--guide-card); }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: 22px; }
+  .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
+  .situation-options, .condition-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+  .situation-options button, .condition-options button { display: grid; min-height: 112px; grid-template-columns: 22px minmax(0, 1fr); grid-template-rows: 1fr auto; gap: 8px; align-items: start; padding: 15px; border: 1px solid var(--guide-border); border-radius: 5px; background: #fff; color: var(--guide-text); font: inherit; text-align: left; cursor: pointer; }
+  .situation-options button:hover, .condition-options button:hover { border-color: var(--guide-accent); }
+  .situation-options button[aria-pressed="true"], .condition-options button[aria-pressed="true"] { border: 2px solid var(--guide-accent); background: var(--guide-accent-soft); }
+  .situation-options button:focus-visible, .condition-options button:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
+  .selection-check { display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid var(--guide-border); border-radius: 50%; font-size: 12px; font-weight: 900; }
+  [aria-pressed="true"] > .selection-check { border-color: var(--guide-accent); background: var(--guide-accent); color: #fff; }
+  .selection-label { font-size: 14px; font-weight: 800; line-height: 1.5; }
+  [data-selection-status] { grid-column: 2; color: var(--guide-sub); font-size: 11px; font-weight: 700; }
+  [aria-pressed="true"] > [data-selection-status] { color: var(--guide-accent); }
+  .condition-group { margin: 22px 0 0; padding: 18px; border: 1px solid var(--guide-border); }
+  .condition-group legend { padding: 0 7px; font-size: 14px; font-weight: 800; }
+  .condition-options { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
+  .condition-options button { min-height: 88px; }
+  .situation-result { margin-top: 20px; padding: 20px; border-left: 4px solid var(--guide-accent); background: var(--guide-accent-soft); }
+  .result-label { margin: 0; color: var(--guide-accent); font-size: 11px; font-weight: 800; }
+  .situation-result h3 { margin: 5px 0 0; font-size: 20px; }
+  .situation-result dl { display: grid; gap: 8px; margin: 15px 0 0; }
+  .situation-result dl div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; }
+  .situation-result dt { color: var(--guide-sub); font-size: 12px; font-weight: 800; }
+  .situation-result dd { margin: 0; font-size: 13px; }
+  .common-notice { margin: 14px 0 0; color: var(--guide-sub); font-size: 12px; }
+  .result-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+  .result-actions a { display: inline-flex; min-height: 44px; align-items: center; padding: 9px 14px; border-radius: 4px; background: #31575a; color: #fff; font-size: 13px; font-weight: 800; }
+  .result-actions a[data-situation-secondary] { border: 1px solid var(--guide-accent); background: transparent; color: var(--guide-accent); }
+  .result-actions a:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
+  .situation-criteria { margin-top: 16px; border-top: 1px solid var(--guide-border); color: var(--guide-sub); font-size: 13px; }
+  .situation-criteria summary { width: fit-content; padding: 14px 2px 4px; color: var(--guide-accent); font-weight: 800; cursor: pointer; }
+  .situation-criteria summary:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
+  .criteria-list { display: grid; gap: 10px; margin-top: 12px; }
+  .criteria-list article { min-width: 0; padding: 14px; border: 1px solid var(--guide-border); background: #faf9f6; overflow-wrap: anywhere; }
+  .criteria-list h3 { margin: 0; color: var(--guide-text); font-size: 14px; }
+  .criteria-list dl { display: grid; gap: 6px; margin: 9px 0 0; }
+  .criteria-list dl div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; }
+  .criteria-list dt { font-size: 11px; font-weight: 800; }
+  .criteria-list dd { min-width: 0; margin: 0; }
+  @media (max-width: 820px) {
+    .situation-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .condition-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 600px) {
+    .situation-adjuster { padding: 20px 14px; }
+    .situation-options, .condition-options { grid-template-columns: 1fr; }
+    .situation-options button, .condition-options button { min-height: 0; }
+    .situation-result dl div { grid-template-columns: 1fr; gap: 2px; }
+    .criteria-list dl div { grid-template-columns: 1fr; gap: 2px; }
+    .result-actions a { width: 100%; justify-content: center; }
+  }
+</style>
+
+<script>
+  import { setupRouteSituationAdjusters } from "../../scripts/routeSituationAdjuster.js";
+
+  setupRouteSituationAdjusters();
+</script>

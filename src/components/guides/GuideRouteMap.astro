@@ -140,6 +140,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
     "tourist-information": [],
     exit: [],
   };
+  const routeMarkers = new Map();
   const exitMarkers = new Map();
 
   if (mapContainer && routeLocations.length) {
@@ -175,6 +176,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         .setPopup(popup)
         .addTo(map);
       layerMarkers.spots.push(marker);
+      routeMarkers.set(location.slug, marker);
     });
 
     supportFacilities.forEach((facility) => {
@@ -283,6 +285,34 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         button.dataset.routeLayer = layer;
         button.dataset.routeVisible = String(visible);
       });
+    });
+
+    const applyLayerState = (layers) => {
+      Object.entries(layers).forEach(([layer, visible]) => {
+        if (!(layer in layerMarkers)) return;
+        setLayerVisibility(layer, visible);
+        const button = document.querySelector(`[data-map-layer="${layer}"]`);
+        button.dataset.routeTarget = `${layer}:${visible ? "visible" : "hidden"}`;
+        button.dataset.routeLayer = layer;
+        button.dataset.routeVisible = String(visible);
+      });
+    };
+
+    window.addEventListener("route:apply-layers", (event) => {
+      applyLayerState(event.detail.layers);
+    });
+
+    if (window.routeSituationLayerState) {
+      applyLayerState(window.routeSituationLayerState);
+    }
+
+    window.addEventListener("route:show-spot", (event) => {
+      const marker = routeMarkers.get(event.detail.spot);
+      if (!marker) return;
+      setLayerVisibility("spots", true);
+      if (!marker.getPopup().isOpen()) marker.togglePopup();
+      map.easeTo({ center: marker.getLngLat(), duration: 300 });
+      marker.getElement().focus({ preventScroll: true });
     });
 
     window.addEventListener("route:show-exit", (event) => {

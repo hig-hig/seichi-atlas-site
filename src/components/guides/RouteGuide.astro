@@ -1,6 +1,6 @@
 ---
 import GuideRouteMap from "./GuideRouteMap.astro";
-import RouteRecommendation from "./RouteRecommendation.astro";
+import RouteSituationAdjuster from "./RouteSituationAdjuster.astro";
 
 const {
   route,
@@ -66,28 +66,7 @@ const mapExitPoints = exitOptions.map((option) => {
       <p>{content.verification.description}</p>
     </aside>
 
-    {content.routeChoices && (
-      <section class="route-choices" aria-labelledby="route-choices-heading">
-        <h2 id="route-choices-heading">{content.routeChoices.title}</h2>
-        <div class="route-choice-list">
-          {content.routeChoices.items.map((choice) => (
-            <a
-              class="route-choice"
-              href={choice.href}
-              data-route-choice
-              data-route-action={choice.action}
-              data-route-target={choice.href}
-            >
-              <strong>{choice.title}</strong>
-              <span class="route-choice-time">{choice.time}</span>
-              <span>{choice.description}</span>
-            </a>
-          ))}
-        </div>
-      </section>
-    )}
-
-    {content.recommendation && <RouteRecommendation config={content.recommendation} />}
+    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} />}
 
     <GuideRouteMap
       locations={mapLocations}
@@ -233,25 +212,6 @@ const mapExitPoints = exitOptions.map((option) => {
 
   setupRouteAnalytics();
   setupRouteExitOptions();
-
-  let highlightedTarget;
-  let highlightTimer;
-  document.querySelectorAll("[data-route-choice]").forEach((choice) => {
-    choice.addEventListener("click", () => {
-      const target = document.querySelector(choice.getAttribute("href"));
-      if (!target) return;
-
-      highlightedTarget?.classList.remove("route-target-highlight");
-      window.clearTimeout(highlightTimer);
-      highlightedTarget = target;
-      target.classList.add("route-target-highlight");
-      window.setTimeout(() => target.focus({ preventScroll: true }), 0);
-      highlightTimer = window.setTimeout(() => {
-        target.classList.remove("route-target-highlight");
-        if (highlightedTarget === target) highlightedTarget = undefined;
-      }, 1800);
-    });
-  });
 </script>
 
 <style>
@@ -290,16 +250,6 @@ const mapExitPoints = exitOptions.map((option) => {
   .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
   .verification-notice strong, .verification-notice p { color: var(--guide-notice-text); }
   .verification-notice p { margin: 4px 0 0; }
-  .route-choices { margin-top: 18px; padding: 24px; background: var(--guide-card); }
-  .route-choices h2 { margin: 0; padding: 0; border: 0; font-size: 22px; }
-  .route-choice-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
-  .route-choice { display: flex; min-height: 126px; flex-direction: column; gap: 5px; padding: 17px; border: 1px solid var(--guide-border); border-radius: 5px; background: #fff; }
-  .route-choice:hover { border-color: var(--guide-accent); }
-  .route-choice:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
-  .route-choice strong { font-size: 17px; }
-  .route-choice span { color: var(--guide-sub); font-size: 13px; }
-  .route-choice .route-choice-time { margin-top: auto; color: var(--guide-accent); font-size: 15px; font-weight: 800; }
-  :global(.route-target-highlight) { outline: 3px solid #9a8053; outline-offset: 4px; background-color: #fff8e9 !important; }
   .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
   .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
   .section-heading h2, .option-section h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
@@ -358,9 +308,6 @@ const mapExitPoints = exitOptions.map((option) => {
     .route-facts dd { font-size: 19px; }
     .route-tags li { padding: 0 8px; font-size: 11px; }
     .map-cta { width: 100%; justify-content: center; }
-    .route-choices { padding: 20px 14px; }
-    .route-choice-list { grid-template-columns: 1fr; }
-    .route-choice { min-height: 0; }
     .route-section { padding: 20px 14px; }
     .timeline-item { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }
     .timeline-item:not(:last-child)::before { left: 18px; }
