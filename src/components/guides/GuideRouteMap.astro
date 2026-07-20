@@ -62,7 +62,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
     </button>
     <button type="button" aria-pressed="true" data-map-layer="exit" data-route-action="toggle-map-layer" data-route-target="exit:visible" data-route-exit-option={exitPoints.map((point) => point.id).join(",")}>
       <span class="map-layer-check" aria-hidden="true">✓</span>
-      <span>途中終了</span>
+      <span>大吉山を省略</span>
       <small>表示中</small>
     </button>
   </div>
@@ -245,12 +245,12 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       markerElement.className = "route-exit-marker";
       markerElement.type = "button";
       markerElement.textContent = exitPoint.mapLabel;
-      markerElement.setAttribute("aria-label", `途中終了地点：${exitPoint.name}`);
+      markerElement.setAttribute("aria-label", `大吉山省略地点：${exitPoint.name}`);
 
       const popupContent = document.createElement("div");
       const popupName = document.createElement("strong");
       const popupDescription = document.createElement("p");
-      popupName.textContent = `途中終了：${exitPoint.name}`;
+      popupName.textContent = `大吉山を省略：${exitPoint.name}`;
       popupDescription.textContent = `${exitPoint.title}。${exitPoint.destinationLabel}は${exitPoint.destination}です。`;
       popupContent.append(popupName, popupDescription);
 
@@ -295,7 +295,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       layerButton.dataset.routeVisible = "true";
       if (!marker.getPopup().isOpen()) marker.togglePopup();
       map.easeTo({ center: marker.getLngLat(), duration: 300 });
-      window.setTimeout(() => marker.getElement().focus({ preventScroll: true }), 0);
+      marker.getElement().focus({ preventScroll: true });
     });
 
     map.on("load", () => {

@@ -151,17 +151,17 @@ const mapExitPoints = exitOptions.map((option) => {
                       aria-expanded="false"
                       aria-controls={panelId}
                       data-exit-toggle
-                    ><span>途中終了</span><span>ここで終了</span></button>
+                    ><span>ルート調整</span><span>大吉山を省略</span></button>
                     <div id={panelId} class="exit-option-panel" hidden data-exit-panel>
                       <h4>{exitOption.title}</h4>
                       <p>{exitOption.guidance}</p>
                       <dl>
-                        <div><dt>終了地点</dt><dd>{exitOption.endPoint}</dd></div>
+                        <div><dt>切替地点</dt><dd>{exitOption.endPoint}</dd></div>
                         <div><dt>{exitOption.destinationLabel}</dt><dd>{exitOption.destination}</dd></div>
                         <div><dt>省略する主な区間</dt><dd>{exitOption.omittedSection}</dd></div>
                         {exitOption.timeSaved && <div><dt>短縮目安</dt><dd>{exitOption.timeSaved}</dd></div>}
                       </dl>
-                      <a href="#route-map" data-show-exit-map data-route-choice>地図で途中終了地点を見る</a>
+                      <a href="#route-map" data-show-exit-map>地図で大吉山省略地点を見る</a>
                     </div>
                   </div>
                 );

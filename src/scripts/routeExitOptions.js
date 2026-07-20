@@ -20,7 +20,9 @@ export function setupRouteExitOptions() {
       }, null);
     });
 
-    mapLink.addEventListener("click", () => {
+    mapLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      document.querySelector(mapLink.getAttribute("href"))?.scrollIntoView();
       sendRouteEvent("show_exit_on_map", { exit_option: exitOption }, null);
       window.dispatchEvent(new CustomEvent("route:show-exit", {
         detail: { exitOption },

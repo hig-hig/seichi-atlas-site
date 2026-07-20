@@ -9,16 +9,17 @@ export function getRouteRecommendation({ selectedTime, availableTime, stamina },
   if (stamina === "low") reasonCodes.push("low_stamina");
   if (isLate) reasonCodes.push("late_start");
 
-  const useShortRoute = reasonCodes.length > 0;
-  const route = useShortRoute ? config.routes.short : config.routes.standard;
+  const usePartialRoute = availableTime === "2h";
+  const useShortRoute = !usePartialRoute && reasonCodes.length > 0;
+  const route = usePartialRoute ? config.routes.partial : useShortRoute ? config.routes.short : config.routes.standard;
   let summary;
   const details = [];
 
   if (availableTime === "2h") {
-    summary = `使える時間が2時間以内のため、${route.label}を提案します`;
-    details.push(`短縮ルートも${config.routes.short.duration}が目安のため、全行程を回るのは難しい条件です`);
+    summary = "使える時間が2時間以内のため、全ルート完走は難しい条件です";
+    details.push("出発地点から無理に全行程を回らず、使える時間に合わせて途中で切り上げてください");
   } else if (stamina === "low") {
-    summary = `体力を控えめに設定しているため、大吉山を省く${route.label}を提案します`;
+    summary = `体力を控えめに設定しているため、${route.label}を提案します`;
     details.push("無理に予定を詰めず、現地の状況に合わせて調整してください");
   } else if (availableTime === "3h") {
     summary = `使える時間が3時間程度のため、${route.label}を提案します`;
@@ -40,6 +41,7 @@ export function getRouteRecommendation({ selectedTime, availableTime, stamina },
     recommendation: route.key,
     label: route.label,
     href: route.href,
+    linkLabel: route.linkLabel,
     reason: `${summary}。${details.join(" また、")}。`,
     reasonCode: reasonCodes.length ? reasonCodes.join("|") : "standard_time_and_stamina",
   };
@@ -76,7 +78,7 @@ export function setupRouteRecommendations() {
       resultTitle.textContent = `おすすめ: ${result.label}`;
       resultReason.textContent = result.reason;
       resultLink.href = result.href;
-      resultLink.textContent = `おすすめの${result.label}を見る`;
+      resultLink.textContent = result.linkLabel || `おすすめの${result.label}を見る`;
 
       currentParameters = {
         recommendation: result.recommendation,

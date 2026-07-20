@@ -36,7 +36,7 @@ export const soundEuphoniumUjiHalfDay = {
           action: "select-standard-route",
         },
         {
-          title: "大吉山なし短縮",
+          title: "大吉山を省略する短縮ルート",
           time: "約3時間15分〜3時間45分",
           description: "約65分短縮",
           href: "#short-route-guide",
@@ -57,7 +57,8 @@ export const soundEuphoniumUjiHalfDay = {
       lateTime: "15:30",
       routes: {
         standard: { key: "standard", label: "標準ルート", duration: "約4時間30分", href: "#route-map" },
-        short: { key: "short", label: "大吉山なし短縮", duration: "約3時間15分〜3時間45分", href: "#short-route-guide" },
+        short: { key: "short", label: "大吉山を省略する短縮ルート", duration: "約3時間15分〜3時間45分", href: "#short-route-guide" },
+        partial: { key: "partial", label: "一部区間のみ", href: "#route-map", linkLabel: "ルート全体の地図で調整する" },
         rain: { key: "rain", label: "雨天向け", href: "#rain-route-guide" },
       },
       availableTimeOptions: [
@@ -106,7 +107,7 @@ export const soundEuphoniumUjiHalfDay = {
         },
         {
           id: "short-route-guide",
-          title: "大吉山を省く短縮ルート",
+          title: "大吉山を省略する短縮ルート",
           description: "宇治上神社の次に大吉山展望台へ向かわず、宇治橋、京阪宇治駅の順に進みます。上り約20分、見学20分、下り約15分、下山後休憩10分の計65分を省けるため、全体は約3時間15分〜3時間45分が目安です。宇治上神社から宇治橋までの移動時間は、現地の経路と通行状況で前後します。",
         },
       ],
@@ -183,14 +184,14 @@ export const soundEuphoniumUjiHalfDay = {
     {
       id: "before-daikichiyama",
       atSlug: "ujigami-shrine",
-      title: "大吉山へ入る前に終了",
-      guidance: "ここで標準ルートを終了し、大吉山を省く既存の短縮ルートへ切り替えます。",
-      endPoint: "宇治上神社周辺（大吉山へ入る前）",
+      title: "大吉山を省略",
+      guidance: "宇治上神社の次に大吉山を省き、宇治橋を経て京阪宇治駅へ向かう既存の短縮ルートへ切り替えます。",
+      endPoint: "宇治上神社（大吉山へ向かう前）",
       destinationLabel: "既存ルート上の終点",
       destination: "京阪宇治駅",
       omittedSection: "大吉山展望台への上り・見学・下りと、下山後の休憩",
       timeSaved: "約65分",
-      mapLabel: "途中終了",
+      mapLabel: "大吉山を省略",
     },
   ],
   steps: [
