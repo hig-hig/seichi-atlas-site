@@ -48,34 +48,24 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
       <p class="hero-lead">{content.hero.lead}</p>
 
       <section class="hero-route-result" aria-label="現在選択中のルート">
-        <p>現在選択中のルート</p>
-        <h2 data-overview-route>{initialRecommendation.label}</h2>
-        <div><strong data-overview-timing>{initialRecommendation.timing}</strong><span data-overview-spots>{initialVariant.visibleSpotSlugs.length}地点</span></div>
-        <p data-overview-note>{initialRecommendation.note}</p>
+        <div class="hero-route-heading">
+          <p>現在選択中のルート</p>
+          <h2 data-overview-route>{initialRecommendation.label}</h2>
+        </div>
+        <dl class="hero-route-meta" aria-label="主要なコース概要">
+          <div><dt>所要時間</dt><dd data-overview-timing>{initialRecommendation.timing}</dd></div>
+          <div><dt>地点数</dt><dd data-overview-spots>{initialVariant.visibleSpotSlugs.length}地点</dd></div>
+          <div><dt>START</dt><dd>{route.start}</dd></div>
+          <div><dt>GOAL</dt><dd>{route.end}</dd></div>
+        </dl>
+        <p class="hero-route-note" data-overview-note>{initialRecommendation.note}</p>
       </section>
-
-      <dl class="route-facts" aria-label="コース概要">
-        {content.hero.facts.map((fact) => (
-          <div><dt>{fact.label === "徒歩距離" ? "標準ルート距離" : fact.label}</dt><dd data-overview-timing={fact.label === "所要時間" ? true : undefined}>{fact.label === "所要時間" ? initialRecommendation.timing : fact.value}</dd></div>
-        ))}
-      </dl>
-
-      <ul class="route-tags" aria-label="コースの特徴">
-        {content.hero.tags.map((tag) => <li data-overview-spots={tag === "9スポット" ? true : undefined}>{tag === "9スポット" ? "9地点" : tag}</li>)}
-      </ul>
 
       <a class="map-cta" href="#route-map" data-route-action="open-map" data-route-target="#route-map">
         <span data-overview-cta>{initialRecommendation.cta}</span>
         <span aria-hidden="true">↓</span>
       </a>
     </header>
-
-    <aside class="verification-notice" aria-label="試作ルートについての注意">
-      <strong>{content.verification.title}</strong>
-      <p>{content.verification.description}</p>
-    </aside>
-
-    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
 
     <GuideRouteMap
       locations={mapLocations}
@@ -90,6 +80,13 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
       editMapUrl={content.map.editUrl}
       initialCenter={content.map.initialCenter}
     />
+
+    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
+
+    <aside class="verification-notice" aria-label="試作ルートについての注意">
+      <strong>{content.verification.title}</strong>
+      <p>{content.verification.description}</p>
+    </aside>
 
     <section class="route-section" aria-labelledby="route-order-heading">
       <div class="section-heading">
@@ -236,32 +233,26 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
     --guide-accent-soft: #e8efee;
     --guide-notice-bg: #f5efe2;
     --guide-notice-text: #6e5732;
-    padding: 36px 20px 80px;
+    padding: 24px 20px 80px;
     background: var(--guide-bg);
     color: var(--guide-text);
   }
   .route-container { width: min(100%, 980px); margin: 0 auto; }
-  .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; color: var(--guide-sub); font-size: 13px; }
+  .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; color: var(--guide-sub); font-size: 13px; }
   .breadcrumb a { color: var(--guide-accent); font-weight: 700; }
-  .route-hero { padding: clamp(28px, 5vw, 52px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
-  .route-hero h1 { max-width: 820px; font-size: clamp(31px, 5.5vw, 50px); line-height: 1.25; }
+  .route-hero { padding: clamp(22px, 4vw, 36px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
+  .route-hero h1 { max-width: 820px; font-size: clamp(29px, 5vw, 44px); line-height: 1.2; }
   .route-hero h1 span { display: block; margin-bottom: 5px; color: var(--guide-sub); font-size: .48em; font-weight: 700; letter-spacing: .02em; }
-  .hero-lead { max-width: 680px; margin: 16px 0 0; color: var(--guide-sub); font-size: 16px; }
-  .hero-route-result { max-width: 760px; min-height: 150px; margin-top: 24px; padding: 16px 18px; border: 1px solid #f1b38e; border-radius: 12px; background: #fff8f3; }
-  .hero-route-result > p:first-child { margin: 0; color: #9a3412; font-size: 14px; font-weight: 800; }
+  .hero-lead { max-width: 720px; margin: 10px 0 0; color: var(--guide-sub); font-size: 16px; }
+  .hero-route-result { display: grid; grid-template-columns: minmax(190px, .8fr) minmax(0, 1.7fr); gap: 10px 22px; margin-top: 16px; padding: 13px 16px; border: 1px solid #f1b38e; border-radius: 12px; background: #fff8f3; }
+  .hero-route-heading > p { margin: 0; color: #9a3412; font-size: 14px; font-weight: 800; }
   .hero-route-result h2 { margin: 3px 0 0; padding: 0; border: 0; font-size: clamp(22px, 3vw, 26px); }
-  .hero-route-result div { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px; font-size: 16px; }
-  .hero-route-result > p:last-child { margin: 7px 0 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
-  .route-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 32px 0 0; border-top: 1px solid var(--guide-border); border-bottom: 1px solid var(--guide-border); }
-  .route-facts div { min-width: 0; padding: 20px 18px; }
-  .route-facts div + div { border-left: 1px solid var(--guide-border); }
-  .route-facts dt { color: var(--guide-sub); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
-  .route-facts dd { margin: 5px 0 0; font-size: clamp(18px, 2.5vw, 25px); font-weight: 800; line-height: 1.35; }
-  .route-tags { display: flex; flex-wrap: wrap; gap: 0; margin: 15px 0 0; padding: 0; color: var(--guide-sub); list-style: none; }
-  .route-tags li { padding: 0 13px; font-size: 12px; line-height: 1.5; }
-  .route-tags li:first-child { padding-left: 0; }
-  .route-tags li + li { border-left: 1px solid var(--guide-border); }
-  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 13px 19px; border-radius: 8px; background: #e85d18; color: #fff; font-weight: 800; }
+  .hero-route-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 14px; margin: 0; align-content: center; }
+  .hero-route-meta div { min-width: 0; }
+  .hero-route-meta dt { color: var(--guide-sub); font-size: 14px; font-weight: 700; }
+  .hero-route-meta dd { margin: 2px 0 0; font-size: 16px; font-weight: 800; line-height: 1.4; }
+  .hero-route-note { grid-column: 1 / -1; margin: 0; color: var(--guide-sub); font-size: 14px; line-height: 1.5; }
+  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 14px; padding: 11px 17px; border-radius: 8px; background: #e85d18; color: #fff; font-weight: 800; }
   .map-cta:hover { background: #c94a0d; }
   .map-cta span:last-child { font-size: 18px; }
   .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
@@ -315,15 +306,10 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
   .check-section ul { margin: 20px 0 0; padding-left: 20px; }
   .check-section li + li { margin-top: 8px; }
   @media (max-width: 720px) {
-    .route-page { padding: 18px 12px 56px; }
-    .route-hero { padding: 26px 18px 28px; }
-    .route-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .route-facts div { padding: 16px 10px; }
-    .route-facts div + div { border-left: 0; }
-    .route-facts div:nth-child(even) { border-left: 1px solid var(--guide-border); }
-    .route-facts div:nth-child(n + 3) { border-top: 1px solid var(--guide-border); }
-    .route-facts dd { font-size: 19px; }
-    .route-tags li { padding: 0 8px; font-size: 11px; }
+    .route-page { padding: 14px 12px 56px; }
+    .route-hero { padding: 20px 16px 22px; }
+    .hero-route-result { grid-template-columns: 1fr; }
+    .hero-route-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .map-cta { width: 100%; justify-content: center; }
     .route-section { padding: 20px 14px; }
     .timeline-item { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }

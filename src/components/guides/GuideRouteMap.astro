@@ -84,7 +84,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   <div class="route-map-shell">
     <div class="map-route-switcher" data-map-route-switcher>
       <button type="button" class="map-route-toggle" aria-expanded="false" aria-controls="map-route-panel" data-map-route-toggle>
-        ルートを変更
+        <span>ルート変更</span><span data-map-route-toggle-status>{quickChoices.find((choice) => choice.recommendation === "standard")?.label ?? initialRecommendation.label}・{initialSpotCount}地点</span>
       </button>
       <div class="map-route-panel" id="map-route-panel" hidden data-map-route-panel>
         <p>現在：<strong data-map-current-route>{initialRecommendation.label}</strong></p>
@@ -100,6 +100,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     </div>
     <div id="guide-route-map" aria-label={mapAriaLabel} data-initial-center={JSON.stringify(initialCenter)}></div>
   </div>
+  <p class="map-adjuster-link"><a href="#situation-adjuster">時間・天候・歩く量から詳しく調整する</a></p>
   <p class="map-attribution-note">
     地図：<a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>・
     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>／
@@ -117,7 +118,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 14px; font-weight: 700; }
   .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
   .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
-  .map-section { scroll-margin-top: 88px; }
+  .map-section { margin-top: 14px; scroll-margin-top: 88px; }
   .map-section:focus { outline: none; }
   .map-result-summary { margin: 18px 0 0; padding: 11px 13px; border-radius: 8px; background: var(--guide-accent-soft); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
   .map-legend { display: flex; flex-wrap: wrap; gap: 7px 16px; margin: 10px 2px 0; padding: 0; color: var(--guide-sub); font-size: 14px; line-height: 1.5; list-style: none; }
@@ -135,9 +136,10 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
   .map-layer-controls button:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
   .map-layer-controls small { font-size: 14px; font-weight: 700; }
-  .route-map-shell { position: relative; height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+  .route-map-shell { position: relative; height: min(68vh, 620px); min-height: 430px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
   .map-route-switcher { position: absolute; z-index: 3; top: 10px; left: 10px; width: min(320px, calc(100% - 20px)); font-size: 14px; }
-  .map-route-toggle { min-height: 42px; padding: 8px 13px; border: 1px solid #e85d18; border-radius: 8px; background: #fff; color: #9a3412; font: inherit; font-weight: 800; box-shadow: 0 2px 5px rgba(47,52,55,.18); cursor: pointer; }
+  .map-route-toggle { display: flex; max-width: 100%; min-height: 42px; align-items: center; gap: 6px; padding: 8px 13px; border: 1px solid #e85d18; border-radius: 8px; background: #fff; color: #9a3412; font: inherit; font-weight: 800; line-height: 1.35; text-align: left; box-shadow: 0 2px 5px rgba(47,52,55,.18); cursor: pointer; }
+  .map-route-toggle span + span::before { content: "｜"; color: #c66b3c; }
   .map-route-toggle[aria-expanded="true"] { background: #fff2e8; }
   .map-route-panel { margin-top: 7px; padding: 13px; border: 1px solid #ded8d2; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 3px 9px rgba(47,52,55,.18); }
   .map-route-panel[hidden] { display: none; }
@@ -151,6 +153,8 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   #guide-route-map { width: 100%; height: 100%; }
   .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-attribution-note a { text-decoration: underline; }
+  .map-adjuster-link { margin: 12px 0 0; font-size: 14px; font-weight: 800; text-align: center; }
+  .map-adjuster-link a { color: #9a3412; text-decoration: underline; text-underline-offset: 3px; }
   :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #e85d18; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.22); cursor: pointer; }
   :global(.route-map-marker[hidden]), :global(.route-support-marker[hidden]), :global(.route-exit-marker[hidden]) { display: none; }
   :global(.route-support-marker) { display: grid; place-items: center; min-width: 76px; min-height: 32px; padding: 4px 7px; border: 2px solid #fff; border-radius: 4px; background: #8a5a00; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
@@ -172,7 +176,9 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     .map-layer-controls button { width: 100%; justify-content: flex-start; }
     .map-layer-controls small { margin-left: auto; }
     .map-legend { gap: 7px 13px; }
-    .route-map-shell { min-height: 360px; }
+    .route-map-shell { height: min(62vh, 560px); min-height: 420px; }
+    .map-route-toggle { flex-wrap: wrap; }
+    .map-route-toggle span + span::before { content: ""; }
   }
 </style>
 
@@ -202,6 +208,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   const summaryElement = document.querySelector("[data-map-result-summary] span");
   const variantNotice = document.querySelector("[data-route-variant-notice]");
   const routeToggle = document.querySelector("[data-map-route-toggle]");
+  const routeToggleStatus = document.querySelector("[data-map-route-toggle-status]");
   const routePanel = document.querySelector("[data-map-route-panel]");
   const mapCurrentRoute = document.querySelector("[data-map-current-route]");
   const mapRecommendationButtons = [...document.querySelectorAll("[data-map-recommendation]")];
@@ -253,6 +260,8 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     };
     const syncMapRecommendation = (detail) => {
       if (mapCurrentRoute) mapCurrentRoute.textContent = detail.label;
+      const activeChoice = mapRecommendationButtons.find((button) => button.dataset.mapRecommendation === detail.recommendation);
+      if (routeToggleStatus) routeToggleStatus.textContent = `${activeChoice?.textContent.trim() || detail.label}・${detail.spotCount}地点`;
       mapRecommendationButtons.forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.mapRecommendation === detail.recommendation));
       });
@@ -262,8 +271,12 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     });
     mapRecommendationButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        window.routeSituationPendingRecommendation = {
+          recommendation: button.dataset.mapRecommendation,
+          interactionLocation: "map",
+        };
         window.dispatchEvent(new CustomEvent("route:request-recommendation", {
-          detail: { recommendation: button.dataset.mapRecommendation, interactionLocation: "map" },
+          detail: window.routeSituationPendingRecommendation,
         }));
         setRoutePanelOpen(false);
         routeToggle?.focus();

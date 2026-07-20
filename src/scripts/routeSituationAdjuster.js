@@ -181,9 +181,10 @@ export function setupRouteSituationAdjusters() {
       });
     });
 
-    window.addEventListener("route:request-recommendation", (event) => {
-      const recommendation = event.detail.recommendation;
-      const location = event.detail.interactionLocation || "map";
+    const handleRecommendationRequest = (detail) => {
+      window.routeSituationPendingRecommendation = null;
+      const recommendation = detail.recommendation;
+      const location = detail.interactionLocation || "map";
       const directSituation = config.situations.find((item) => item.recommendation === recommendation);
       if (directSituation) {
         selectSituation(directSituation, location);
@@ -203,6 +204,10 @@ export function setupRouteSituationAdjusters() {
         selectCondition(group, condition, location);
         return;
       }
+    };
+
+    window.addEventListener("route:request-recommendation", (event) => {
+      handleRecommendationRequest(event.detail);
     });
 
     primaryLink.addEventListener("click", (event) => {
@@ -227,6 +232,8 @@ export function setupRouteSituationAdjusters() {
       }, null);
     });
 
-    renderResult(currentRecommendation);
+    const pendingRecommendation = window.routeSituationPendingRecommendation;
+    if (pendingRecommendation) handleRecommendationRequest(pendingRecommendation);
+    else renderResult(currentRecommendation);
   });
 }
