@@ -71,7 +71,7 @@ export const soundEuphoniumUjiHalfDay = {
       },
       recommendations: {
         standard: { routeVariant: "standard", condition: "予定どおり／4時間以上", label: "標準ルート", timing: "約4時間30分", note: "全行程の所要時間と現地状況を出発前に確認してください。", cta: "標準ルートを地図に反映", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false }, mapAction: { type: "fit-route", popup: false, summary: "標準ルート" } },
-        partial: { routeVariant: "unverifiedPartial", condition: "使える時間が2時間以内", label: "一部区間のみ", timing: "2時間以内では全ルート完走は難しい条件です。", note: "確認済みデータにない終了地点、徒歩時間、経路は提示しません。", cta: "全体地図で回れる範囲を確認", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false }, mapAction: { type: "fit-route", popup: false, summary: "2時間以内の確定ルートは未検証" } },
+        partial: { routeVariant: "twoHourCore", condition: "使える時間が2時間以内", label: "2時間コアルート", timing: "約1時間35分〜2時間", note: "5地点に絞った推定ルートです。現地状況や滞在時間により2時間を超える場合があります。", cta: "2時間ルートを地図に反映", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false }, mapAction: { type: "fit-route", popup: false, summary: "2時間コアルート" } },
         short: { routeVariant: "shortWithoutDaikichiyama", condition: "使える時間が3時間程度", label: "大吉山を省略する短縮ルート", timing: "約3時間15分〜3時間45分", note: "3時間以内の完走を保証するものではありません。", cta: "短縮ルートを地図に反映", href: "#route-map", secondary: { label: "短縮ルートの説明を見る", href: "#short-route-guide" }, layers: { spots: true, rest: true, "tourist-information": false, exit: true }, mapAction: { type: "show-exit", exitOption: "before-daikichiyama", popup: true, summary: "大吉山を省略" } },
         "extra-30m": { routeVariant: "standard", condition: "余り時間が30分ほど", label: "休憩・観光案内・既存スポットの再確認", timing: "余裕時間：約30分", note: "施設の利用可否と案内時間は現地で確認してください。", cta: "休憩・観光案内を地図に表示", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": true, exit: false }, mapAction: { type: "fit-facilities", facilityCategories: ["rest", "tourist-information"], popup: false, summary: "休憩・観光案内を確認" } },
         "extra-1h": { routeVariant: "standard", condition: "余り時間が1時間ほど", label: "大吉山を追加候補として確認", timing: "大吉山の既存案内：約65分", note: "時間・天候・歩く量を確認して判断してください。", cta: "大吉山を地図で確認", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false }, mapAction: { type: "show-spot", spotSlug: "daikichiyama-observation-deck", popup: true, summary: "大吉山を追加候補として確認" } },
@@ -165,14 +165,21 @@ export const soundEuphoniumUjiHalfDay = {
         "keihan-uji-station",
       ],
       fieldVerified: false,
-      note: "接続経路は徒歩ルーティング結果を使用し、現地歩行は未確認",
+      note: "短縮接続経路は徒歩ルーティングによる推定です。現地歩行は未確認です。",
     },
-    unverifiedPartial: {
-      label: "2時間以内の確定ルートは未検証",
-      geometryKey: null,
-      visibleSpotSlugs: null,
-      verified: false,
-      note: "2時間以内の確定ルートは未検証",
+    twoHourCore: {
+      label: "2時間コアルート",
+      geometryKey: "twoHourCore",
+      visibleSpotSlugs: [
+        "jr-uji-station-tourist-info",
+        "uji-shrine",
+        "ujigami-shrine",
+        "uji-bridge",
+        "keihan-uji-station",
+      ],
+      fieldVerified: false,
+      note: "2時間ルートは徒歩ルーティングと既存案内による推定です。現地歩行は未確認です。",
+      estimatedDuration: "約1時間35分〜2時間",
     },
   },
   supportFacilities: [

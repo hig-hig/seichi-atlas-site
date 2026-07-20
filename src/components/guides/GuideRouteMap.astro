@@ -54,9 +54,7 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
     <li data-legend-layer="tourist-information" hidden><span class="legend-symbol legend-information" aria-hidden="true">i</span>観光案内</li>
     <li data-legend-layer="exit" hidden><span class="legend-symbol legend-exit" aria-hidden="true">→</span>省略地点</li>
   </ul>
-  <p class="route-variant-notice" data-route-variant-notice hidden>
-    短縮接続経路は徒歩ルーティングによる推定です。現地歩行は未確認です。
-  </p>
+  <p class="route-variant-notice" data-route-variant-notice hidden></p>
   <div class="map-layer-controls" aria-label="地図の表示切替">
     <button type="button" aria-pressed="true" data-map-layer="spots" data-route-action="toggle-map-layer" data-route-target="spots:visible">
       <span class="map-layer-check" aria-hidden="true">✓</span>
@@ -406,7 +404,10 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
       currentRouteCoordinates = geometry.features?.[0]?.geometry?.coordinates || [];
       activeSpotSlugs = new Set(routeVariant.visibleSpotSlugs || routeLocations.map((location) => location.slug));
       syncSpotMarkerVisibility();
-      if (variantNotice) variantNotice.hidden = state.routeVariantId !== "shortWithoutDaikichiyama";
+      if (variantNotice) {
+        variantNotice.textContent = routeVariant.note || "";
+        variantNotice.hidden = !routeVariant.note;
+      }
       applyLayerState(state.layers);
       closeAllPopups();
       const { action } = state;

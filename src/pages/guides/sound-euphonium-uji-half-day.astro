@@ -5,6 +5,7 @@ import publicData from "../../data/publicData.json";
 import { soundEuphoniumUjiHalfDay as route } from "../../data/routes.js";
 import routeGeometryRaw from "../../data/routeGeometries/sound-euphonium-uji-half-day.geojson?raw";
 import shortRouteGeometryRaw from "../../data/route-geometries/uji-sound-euphonium-short.geojson?raw";
+import twoHourRouteGeometryRaw from "../../data/route-geometries/uji-sound-euphonium-two-hour.geojson?raw";
 
 const { canonicalPath, seoTitle: title, seoDescription: description } = route.guide;
 const siteUrl = "https://seichi-atlas-site.vercel.app";
@@ -34,11 +35,14 @@ if (!optionSpot) {
 }
 
 const routeGeometry = JSON.parse(routeGeometryRaw);
+const geometryByKey = {
+  standard: routeGeometry,
+  shortWithoutDaikichiyama: JSON.parse(shortRouteGeometryRaw),
+  twoHourCore: JSON.parse(twoHourRouteGeometryRaw),
+};
 const routeVariants = Object.fromEntries(Object.entries(route.routeVariants).map(([id, variant]) => [id, {
   ...variant,
-  geometry: variant.geometryKey === "standard"
-    ? routeGeometry
-    : variant.geometryKey === "shortWithoutDaikichiyama" ? JSON.parse(shortRouteGeometryRaw) : null,
+  geometry: geometryByKey[variant.geometryKey] ?? null,
 }]));
 
 const content = route.guide;
