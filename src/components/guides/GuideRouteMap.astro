@@ -44,6 +44,9 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
     <h2 id="route-map-heading">{sectionTitle}</h2>
     <p>{description}</p>
   </div>
+  <p class="map-result-summary" data-map-result-summary aria-live="polite">
+    <strong>現在の表示：</strong><span>標準ルート｜約4時間30分</span>
+  </p>
   <div class="map-layer-controls" aria-label="地図の表示切替">
     <button type="button" aria-pressed="true" data-map-layer="spots" data-route-action="toggle-map-layer" data-route-target="spots:visible">
       <span class="map-layer-check" aria-hidden="true">✓</span>
@@ -83,34 +86,35 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
 
 <style>
   .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
-  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 14px; font-weight: 700; }
   .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
   .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
   .map-section { scroll-margin-top: 88px; }
   .map-section:focus { outline: none; }
+  .map-result-summary { margin: 18px 0 0; padding: 11px 13px; border-radius: 8px; background: var(--guide-accent-soft); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
   .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--guide-accent); border-radius: 4px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--guide-accent); border-radius: 4px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
   .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
   .map-layer-controls button:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
-  .map-layer-controls small { font-size: 10px; font-weight: 700; }
+  .map-layer-controls small { font-size: 14px; font-weight: 700; }
   .route-map-shell { height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
   #guide-route-map { width: 100%; height: 100%; }
-  .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 11px; }
+  .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-attribution-note a { text-decoration: underline; }
   :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #456f73; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.22); cursor: pointer; }
-  :global(.route-support-marker) { display: grid; place-items: center; min-width: 84px; height: 32px; padding: 0 9px; border: 2px solid #fff; border-radius: 4px; background: #72552f; color: #fff; font: 800 11px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
+  :global(.route-support-marker) { display: grid; place-items: center; min-width: 84px; min-height: 34px; padding: 5px 9px; border: 2px solid #fff; border-radius: 4px; background: #72552f; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
   :global(.route-support-marker--information) { border-radius: 18px; background: #315f78; }
   :global(.route-support-marker--information-toilet) { min-width: 112px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #584f78; }
-  :global(.route-exit-marker) { display: grid; place-items: center; min-width: 86px; height: 34px; padding: 0 11px; border: 2px solid #fff; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); background: #713d36; color: #fff; font: 800 11px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
+  :global(.route-exit-marker) { display: grid; place-items: center; min-width: 86px; min-height: 36px; padding: 5px 13px 5px 10px; border: 2px solid #fff; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); background: #713d36; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
   :global(.maplibregl-popup-content) { padding: 12px 14px; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; }
-  :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 13px; }
+  :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 14px; }
   :global(.route-support-popup) { max-width: 280px; }
-  :global(.route-support-popup dl) { margin: 8px 0 0; font-size: 12px; }
+  :global(.route-support-popup dl) { margin: 8px 0 0; font-size: 14px; }
   :global(.route-support-popup dl div) { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 6px; }
   :global(.route-support-popup dt) { font-weight: 800; }
   :global(.route-support-popup dd) { margin: 0; }
-  :global(.route-support-popup p) { margin: 8px 0 0; font-size: 12px; line-height: 1.6; }
-  :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 12px; font-weight: 800; }
+  :global(.route-support-popup p), :global(.maplibregl-popup-content p) { margin: 8px 0 0; font-size: 14px; line-height: 1.6; }
+  :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 14px; font-weight: 800; }
   @media (max-width: 720px) {
     .route-section { padding: 20px 14px; }
     .map-layer-controls { display: grid; grid-template-columns: 1fr; }
@@ -142,8 +146,12 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   };
   const routeMarkers = new Map();
   const exitMarkers = new Map();
+  const summaryElement = document.querySelector("[data-map-result-summary] span");
 
-  if (mapContainer && routeLocations.length) {
+  if (mapContainer && routeLocations.length && mapContainer.dataset.ready !== "true") {
+    mapContainer.dataset.ready = "true";
+    let mapLoaded = false;
+    let pendingMapState = window.routeSituationPendingMapAction || null;
     const map = new maplibregl.Map({
       container: mapContainer,
       style: "https://tiles.openfreemap.org/styles/positron",
@@ -239,6 +247,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         .setLngLat([facility.lng, facility.lat])
         .setPopup(popup)
         .addTo(map);
+      marker.facility = facility;
       layerMarkers[facility.markerLayer].push(marker);
     });
 
@@ -298,35 +307,61 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       });
     };
 
-    window.addEventListener("route:apply-layers", (event) => {
-      applyLayerState(event.detail.layers);
+    const routeCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
+    const fitPoints = (points) => {
+      if (!points.length) return;
+      const bounds = new maplibregl.LngLatBounds(points[0], points[0]);
+      points.slice(1).forEach((point) => bounds.extend(point));
+      map.fitBounds(bounds, { padding: 54, maxZoom: 15, duration: 300 });
+    };
+    const visibleMarkerPoints = () => Object.entries(layerMarkers).flatMap(([layer, markers]) => {
+      const visible = document.querySelector(`[data-map-layer="${layer}"]`)?.getAttribute("aria-pressed") === "true";
+      return visible ? markers.map((marker) => marker.getLngLat().toArray()) : [];
     });
+    const closeAllPopups = () => Object.values(layerMarkers).flat()
+      .forEach((marker) => marker.getPopup()?.remove());
+    const applyMapState = (state) => {
+      if (!state) return;
+      pendingMapState = state;
+      if (summaryElement) {
+        summaryElement.textContent = window.routeSituationMapSummary || state.action.summary;
+      }
+      if (!mapLoaded) return;
+      applyLayerState(state.layers);
+      closeAllPopups();
+      const { action } = state;
+      if (action.type === "show-spot") {
+        setLayerVisibility("spots", true);
+        const marker = routeMarkers.get(action.spotSlug);
+        if (!marker || marker.getElement().hidden) return;
+        map.easeTo({ center: marker.getLngLat(), duration: 300 });
+        if (!marker.getPopup().isOpen()) marker.togglePopup();
+      } else if (action.type === "show-exit") {
+        setLayerVisibility("exit", true);
+        const marker = exitMarkers.get(action.exitOption);
+        if (!marker || marker.getElement().hidden) return;
+        map.easeTo({ center: marker.getLngLat(), duration: 300 });
+        if (!marker.getPopup().isOpen()) marker.togglePopup();
+      } else if (action.type === "fit-facilities") {
+        const categories = action.facilityCategories || [];
+        categories.forEach((category) => setLayerVisibility(category, true));
+        const markers = [...layerMarkers.rest, ...layerMarkers["tourist-information"]]
+          .filter((marker) => marker.facility.categories.some((category) => categories.includes(category)));
+        fitPoints(markers.map((marker) => marker.getLngLat().toArray()));
+      } else if (action.type === "fit-current") {
+        fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
+      } else if (action.type === "fit-route") {
+        fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
+      }
+    };
 
-    if (window.routeSituationLayerState) {
-      applyLayerState(window.routeSituationLayerState);
+    window.addEventListener("route:update-summary", (event) => {
+      if (summaryElement) summaryElement.textContent = event.detail.summary;
+    });
+    window.addEventListener("route:apply-map-action", (event) => applyMapState(event.detail));
+    if (window.routeSituationMapSummary && summaryElement) {
+      summaryElement.textContent = window.routeSituationMapSummary;
     }
-
-    window.addEventListener("route:show-spot", (event) => {
-      const marker = routeMarkers.get(event.detail.spot);
-      if (!marker) return;
-      setLayerVisibility("spots", true);
-      if (!marker.getPopup().isOpen()) marker.togglePopup();
-      map.easeTo({ center: marker.getLngLat(), duration: 300 });
-      marker.getElement().focus({ preventScroll: true });
-    });
-
-    window.addEventListener("route:show-exit", (event) => {
-      const marker = exitMarkers.get(event.detail.exitOption);
-      if (!marker) return;
-      setLayerVisibility("exit", true);
-      const layerButton = document.querySelector('[data-map-layer="exit"]');
-      layerButton.dataset.routeTarget = "exit:visible";
-      layerButton.dataset.routeLayer = "exit";
-      layerButton.dataset.routeVisible = "true";
-      if (!marker.getPopup().isOpen()) marker.togglePopup();
-      map.easeTo({ center: marker.getLngLat(), duration: 300 });
-      marker.getElement().focus({ preventScroll: true });
-    });
 
     map.on("load", () => {
       map.addSource("guide-route", {
@@ -346,13 +381,9 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         },
       });
 
-      const routeCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
-      const bounds = new maplibregl.LngLatBounds();
-      routeLocations.forEach((location) => bounds.extend([location.lng, location.lat]));
-      supportFacilities.forEach((facility) => bounds.extend([facility.lng, facility.lat]));
-      exitPoints.forEach((exitPoint) => bounds.extend([exitPoint.lng, exitPoint.lat]));
-      routeCoordinates.forEach((coordinate) => bounds.extend(coordinate));
-      map.fitBounds(bounds, { padding: 54, maxZoom: 15, duration: 0 });
+      mapLoaded = true;
+      if (pendingMapState) applyMapState(pendingMapState);
+      else fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
     });
   }
 </script>

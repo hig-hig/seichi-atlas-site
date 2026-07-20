@@ -4,18 +4,30 @@ const layerStateValue = (layers) => Object.entries(layers)
   .map(([layer, visible]) => `${layer}:${visible ? "visible" : "hidden"}`)
   .join(",");
 
+const mapTargetValue = (action) => action.spotSlug
+  || action.exitOption
+  || action.facilityCategories?.join(",")
+  || "route-map";
+
 const setPressed = (buttons, selected) => {
   buttons.forEach((button) => {
     const pressed = button === selected;
     button.setAttribute("aria-pressed", String(pressed));
     button.querySelector(".selection-check").textContent = pressed ? "✓" : "";
-    button.querySelector("[data-selection-status]").textContent = pressed ? "選択中" : "選択する";
+    const status = button.querySelector("[data-selection-status]");
+    status.hidden = !pressed;
   });
 };
 
-const applyLayers = (layers) => {
-  window.routeSituationLayerState = layers;
-  window.dispatchEvent(new CustomEvent("route:apply-layers", { detail: { layers } }));
+const announceSummary = (summary) => {
+  window.routeSituationMapSummary = summary;
+  window.dispatchEvent(new CustomEvent("route:update-summary", { detail: { summary } }));
+};
+
+const applyMapAction = (result) => {
+  const detail = { action: result.mapAction, layers: result.layers };
+  window.routeSituationPendingMapAction = detail;
+  window.dispatchEvent(new CustomEvent("route:apply-map-action", { detail }));
 };
 
 export function setupRouteSituationAdjusters() {
@@ -30,44 +42,47 @@ export function setupRouteSituationAdjusters() {
     const conditionGroups = [...root.querySelectorAll("[data-condition-group]")];
     const resultTitle = root.querySelector("[data-result-title]");
     const resultTiming = root.querySelector("[data-result-timing]");
-    const resultReason = root.querySelector("[data-result-reason]");
-    const resultConstraint = root.querySelector("[data-result-constraint]");
+    const resultNote = root.querySelector("[data-result-note]");
     const primaryLink = root.querySelector("[data-situation-cta]");
     const secondaryLink = root.querySelector("[data-situation-secondary]");
     let selectedSituation = config.situations[0];
     let selectedCondition = "";
-    let currentResult = config.recommendations[selectedSituation.recommendation];
+    let currentRecommendation = selectedSituation.recommendation;
+    let currentResult = config.recommendations[currentRecommendation];
 
-    const renderResult = (result) => {
-      currentResult = result;
-      resultTitle.textContent = result.label;
-      resultTiming.textContent = result.timing;
-      resultReason.textContent = result.reason;
-      resultConstraint.textContent = result.constraint;
-      primaryLink.href = result.href;
-      primaryLink.textContent = result.cta;
-      if (result.secondary) {
+    const renderResult = (recommendation) => {
+      currentRecommendation = recommendation;
+      currentResult = config.recommendations[recommendation];
+      resultTitle.textContent = currentResult.label;
+      resultTiming.textContent = currentResult.timing;
+      resultNote.textContent = currentResult.note;
+      primaryLink.href = currentResult.href;
+      primaryLink.textContent = currentResult.cta;
+      primaryLink.removeAttribute("aria-disabled");
+      if (currentResult.secondary) {
         secondaryLink.hidden = false;
-        secondaryLink.href = result.secondary.href;
-        secondaryLink.textContent = result.secondary.label;
+        secondaryLink.href = currentResult.secondary.href;
+        secondaryLink.textContent = currentResult.secondary.label;
       } else {
         secondaryLink.hidden = true;
         secondaryLink.removeAttribute("href");
         secondaryLink.textContent = "";
       }
-      applyLayers(result.layers);
+      announceSummary(currentResult.mapAction.summary);
+      applyMapAction(currentResult);
     };
 
     const showPendingResult = () => {
       currentResult = null;
+      currentRecommendation = "";
       resultTitle.textContent = "追加条件を選択してください";
       resultTiming.textContent = "選択後に時間の目安または注意を表示します。";
-      resultReason.textContent = "現在の状況に必要な条件だけを確認します。";
-      resultConstraint.textContent = "病名・具体的な健康情報・正確な位置情報は入力・取得しません。選択履歴は端末やアカウントに保存せず、選択項目と提示結果はアクセス解析イベントとして記録される場合があります。";
+      resultNote.textContent = "現在の状況に必要な条件だけを確認します。";
       primaryLink.removeAttribute("href");
       primaryLink.textContent = "追加条件を選択してください";
       primaryLink.setAttribute("aria-disabled", "true");
       secondaryLink.hidden = true;
+      announceSummary("条件を選択すると地図表示が更新されます");
     };
 
     situationButtons.forEach((button) => {
@@ -76,17 +91,12 @@ export function setupRouteSituationAdjusters() {
         selectedCondition = "";
         setPressed(situationButtons, button);
         conditionGroups.forEach((group) => {
-          const visible = group.dataset.conditionGroup === selectedSituation.conditionGroup;
-          group.hidden = !visible;
+          group.hidden = group.dataset.conditionGroup !== selectedSituation.conditionGroup;
           setPressed([...group.querySelectorAll("[data-condition]")], null);
         });
         sendRouteEvent("select_route_situation", { situation: selectedSituation.value }, null);
-        if (selectedSituation.recommendation) {
-          primaryLink.removeAttribute("aria-disabled");
-          renderResult(config.recommendations[selectedSituation.recommendation]);
-        } else {
-          showPendingResult();
-        }
+        if (selectedSituation.recommendation) renderResult(selectedSituation.recommendation);
+        else showPendingResult();
       });
     });
 
@@ -98,8 +108,7 @@ export function setupRouteSituationAdjusters() {
           const condition = groupConfig.options.find((item) => item.value === button.dataset.condition);
           selectedCondition = condition.value;
           setPressed(buttons, button);
-          primaryLink.removeAttribute("aria-disabled");
-          renderResult(config.recommendations[condition.recommendation]);
+          renderResult(condition.recommendation);
           sendRouteEvent("select_route_condition", {
             situation: selectedSituation.value,
             condition: selectedCondition,
@@ -116,22 +125,19 @@ export function setupRouteSituationAdjusters() {
         return;
       }
       event.preventDefault();
-      applyLayers(currentResult.layers);
-      const target = document.querySelector(currentResult.href);
-      target?.scrollIntoView();
-      target?.focus({ preventScroll: true });
-      if (currentResult.spot) {
-        window.dispatchEvent(new CustomEvent("route:show-spot", { detail: { spot: currentResult.spot } }));
-      }
+      applyMapAction(currentResult);
+      document.querySelector("#route-map")?.scrollIntoView();
       sendRouteEvent("open_situation_recommendation", {
         situation: selectedSituation.value,
         condition: selectedCondition || undefined,
-        recommendation: Object.entries(config.recommendations).find(([, value]) => value === currentResult)?.[0],
+        recommendation: currentRecommendation,
         target: currentResult.href,
         layer_state: layerStateValue(currentResult.layers),
+        map_action: currentResult.mapAction.type,
+        map_target: mapTargetValue(currentResult.mapAction),
       }, null);
     });
 
-    renderResult(currentResult);
+    renderResult(currentRecommendation);
   });
 }
