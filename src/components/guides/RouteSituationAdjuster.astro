@@ -16,9 +16,7 @@ const initialSpotCount = routeVariantMetadata[initialResult.routeVariant].visibl
 
 <section class="situation-adjuster" id="situation-adjuster" aria-labelledby="situation-adjuster-heading" data-situation-adjuster tabindex="-1">
   <div class="section-heading">
-    <p class="section-label">状況を自己申告</p>
     <h2 id="situation-adjuster-heading">{config.title}</h2>
-    <p>{config.description}</p>
   </div>
 
   <details class="information-details">
@@ -34,7 +32,6 @@ const initialSpotCount = routeVariantMetadata[initialResult.routeVariant].visibl
         return (
           <label class="choice-card" for={inputId} role="radio" aria-checked={index === 0 ? "true" : "false"}>
             <input id={inputId} type="radio" name="route-situation" value={situation.value} checked={index === 0} data-situation={situation.value} />
-            <span class="choice-category">{situation.category}</span>
             <strong>{situation.label}</strong>
             <small>{situation.helper}</small>
             <span class="selection-check" aria-hidden="true" hidden={index !== 0}>✓</span>
@@ -53,7 +50,6 @@ const initialSpotCount = routeVariantMetadata[initialResult.routeVariant].visibl
           return (
             <label class="choice-card choice-card--condition" for={inputId} role="radio" aria-checked="false">
               <input id={inputId} type="radio" name={`route-condition-${groupId}`} value={option.value} data-condition={option.value} />
-              <span class="choice-category">追加条件</span>
               <strong>{option.label}</strong>
               <small>{option.helper}</small>
               <span class="selection-check" aria-hidden="true" hidden>✓</span>
@@ -65,17 +61,19 @@ const initialSpotCount = routeVariantMetadata[initialResult.routeVariant].visibl
   ))}
 
   <article class="situation-result" aria-live="polite" data-situation-result>
-    <p class="result-label">提案する回り方</p>
     <h3 data-result-title>{initialResult.label}</h3>
     <div class="result-meta">
       <strong data-result-timing>{initialResult.timing}</strong>
       <span data-result-spots>{initialSpotCount}地点</span>
     </div>
-    <p class="result-note" data-result-note>{initialResult.note}</p>
     <div class="result-actions">
       <a href={initialResult.href} data-situation-cta>{initialResult.cta}</a>
       <a hidden data-situation-secondary></a>
     </div>
+    <details class="result-details">
+      <summary>注意</summary>
+      <p class="result-note" data-result-note>{initialResult.note}</p>
+    </details>
   </article>
 
   <details class="information-details">
@@ -104,57 +102,57 @@ const initialSpotCount = routeVariantMetadata[initialResult.routeVariant].visibl
 <style>
   .situation-adjuster { margin-top: 18px; padding: 24px; background: var(--guide-card); font-size: 16px; line-height: 1.6; scroll-margin-top: 88px; }
   .situation-adjuster:focus { outline: none; }
-  .section-label { margin: 0 0 6px; color: #9a3412; font-size: 14px; font-weight: 700; }
   .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 30px); }
-  .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
   .information-details, .situation-criteria { margin-top: 16px; border-top: 1px solid var(--guide-border); color: var(--guide-sub); font-size: 14px; }
-  .information-details summary, .situation-criteria summary { width: fit-content; padding: 12px 2px 2px; color: #9a3412; font-weight: 800; cursor: pointer; }
+  .information-details summary, .situation-criteria summary, .result-details summary { width: fit-content; padding: 12px 2px 2px; color: var(--guide-secondary); font-weight: 800; cursor: pointer; }
   .information-details ul { margin: 10px 0 0; padding-left: 1.4em; }
   .information-details p { margin: 10px 0 0; }
-  summary:focus-visible { outline: 3px solid #f26a21; outline-offset: 3px; }
+  summary:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
   .situation-fieldset { margin: 0; padding: 0; border: 0; }
-  .situation-options, .condition-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
-  .choice-card { position: relative; display: grid; min-height: 92px; grid-template-rows: auto auto 1fr; gap: 2px; padding: 13px 42px 13px 14px; border: 1px solid #ded8d2; border-radius: 10px; background: #fff; color: var(--guide-text); cursor: pointer; }
-  .choice-card:hover { border-color: #f26a21; background: #fff8f3; }
-  .choice-card:has(input:checked) { border: 2px solid #f26a21; background: #fff2e8; color: #9a3412; }
-  .choice-card:has(input:focus-visible) { outline: 3px solid #f26a21; outline-offset: 3px; }
+  .situation-options, .condition-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+  .choice-card { position: relative; display: grid; min-height: 82px; grid-template-rows: auto 1fr; gap: 2px; padding: 12px 40px 12px 13px; border: 1px solid var(--guide-border); border-radius: 10px; background: var(--guide-card); color: var(--guide-text); cursor: pointer; }
+  .choice-card:hover { border-color: var(--guide-accent); background: var(--guide-accent-soft); }
+  .choice-card:has(input:checked) { border: 2px solid var(--guide-accent); background: var(--guide-accent-soft); color: var(--guide-text); }
+  .choice-card:has(input:focus-visible) { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
   .choice-card input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-  .choice-category { color: #9a3412; font-size: 14px; font-weight: 800; }
   .choice-card strong { font-size: 16px; line-height: 1.4; }
   .choice-card small { color: var(--guide-sub); font-size: 14px; line-height: 1.45; }
-  .selection-check { position: absolute; top: 13px; right: 13px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: #f26a21; color: #fff; font-size: 14px; font-weight: 900; }
+  .selection-check { position: absolute; top: 12px; right: 12px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--guide-accent); color: #fff; font-size: 14px; font-weight: 900; }
   .selection-check[hidden] { display: none; }
-  .condition-group { margin: 20px 0 0; padding: 14px; border: 1px solid #ded8d2; border-radius: 10px; }
+  .condition-group { margin: 20px 0 0; padding: 14px; border: 1px solid var(--guide-border); border-radius: 10px; }
   .condition-group legend { padding: 0 7px; font-size: 14px; font-weight: 800; }
-  .condition-options { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 0; }
-  .choice-card--condition { min-height: 84px; }
-  .situation-result { margin-top: 22px; min-height: 190px; padding: 22px; border: 1px solid #f1b38e; border-radius: 12px; background: #fff8f3; }
-  .result-label { margin: 0; color: #9a3412; font-size: 14px; font-weight: 800; }
-  .situation-result h3 { margin: 4px 0 0; font-size: clamp(22px, 3vw, 24px); line-height: 1.45; }
-  .result-meta { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 10px; font-size: 16px; }
-  .result-note { margin: 10px 0 0; font-size: 16px; }
-  .result-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; }
-  .result-actions a { display: inline-flex; min-height: 46px; align-items: center; padding: 9px 16px; border-radius: 8px; background: #e85d18; color: #fff; font-size: 16px; font-weight: 800; }
-  .result-actions a:hover { background: #c94a0d; }
-  .result-actions a[data-situation-secondary] { min-height: auto; padding: 4px 1px; border-radius: 0; background: transparent; color: #9a3412; font-size: 14px; text-decoration: underline; }
-  .result-actions a:focus-visible { outline: 3px solid #f26a21; outline-offset: 3px; }
+  .condition-options { margin-top: 0; }
+  .choice-card--condition { min-height: 76px; }
+  .situation-result { display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: 6px 20px; align-items: center; margin-top: 18px; padding: 16px 18px; border: 1px solid var(--guide-border); border-radius: 12px; background: var(--guide-accent-soft); }
+  .situation-result h3 { margin: 0; font-size: clamp(20px, 3vw, 24px); line-height: 1.4; }
+  .result-meta { display: flex; flex-wrap: wrap; gap: 7px 14px; font-size: 16px; }
+  .result-note { margin: 8px 0 0; font-size: 14px; }
+  .result-actions { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .result-actions a { display: inline-flex; min-height: 44px; align-items: center; padding: 8px 15px; border-radius: 8px; background: var(--guide-accent); color: #fff; font-size: 16px; font-weight: 800; }
+  .result-actions a:hover { background: var(--primary-hover); }
+  .result-actions a[data-situation-secondary] { min-height: auto; padding: 4px 1px; border-radius: 0; background: transparent; color: var(--guide-secondary); font-size: 14px; text-decoration: underline; }
+  .result-actions a:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
+  .result-details { grid-column: 1 / -1; color: var(--guide-sub); font-size: 14px; }
   .criteria-list { display: grid; gap: 9px; margin-top: 12px; }
-  .criteria-list article { min-width: 0; padding: 13px; border: 1px solid var(--guide-border); border-radius: 8px; background: #faf9f6; overflow-wrap: anywhere; }
+  .criteria-list article { min-width: 0; padding: 13px; border: 1px solid var(--guide-border); border-radius: 8px; background: var(--card-subtle); overflow-wrap: anywhere; }
   .criteria-list dl { display: grid; gap: 6px; margin: 0; }
   .criteria-list dl div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; }
   .criteria-list dt { font-weight: 800; }
   .criteria-list dd { min-width: 0; margin: 0; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  @media (max-width: 960px) {
+    .situation-options, .condition-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 600px) {
     .situation-adjuster { padding: 20px 14px; }
-    .situation-options { grid-template-columns: 1fr; }
-    .condition-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .choice-card { min-height: 86px; }
+    .choice-card { min-height: 78px; }
+    .situation-result { grid-template-columns: 1fr; }
+    .result-actions { grid-column: 1; grid-row: auto; }
     .result-actions a { width: 100%; justify-content: center; }
     .criteria-list dl div { grid-template-columns: 1fr; gap: 1px; }
   }
   @media (max-width: 410px) {
-    .condition-options { grid-template-columns: 1fr; }
+    .situation-options, .condition-options { grid-template-columns: 1fr; }
   }
 </style>
 

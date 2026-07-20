@@ -45,12 +45,10 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
         <span>{content.hero.workTitle}</span>
         {content.hero.courseTitle}
       </h1>
-      <p class="hero-lead">{content.hero.lead}</p>
-
       <section class="hero-route-result" aria-label="現在選択中のルート">
         <div class="hero-route-heading">
-          <p>現在選択中のルート</p>
           <h2 data-overview-route>{initialRecommendation.label}</h2>
+          <span class="route-status" data-overview-status>{initialVariant.fieldVerified ? "確認済み" : "現地未確認"}</span>
         </div>
         <dl class="hero-route-meta" aria-label="主要なコース概要">
           <div><dt>所要時間</dt><dd data-overview-timing>{initialRecommendation.timing}</dd></div>
@@ -58,13 +56,7 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
           <div><dt>START</dt><dd>{route.start}</dd></div>
           <div><dt>GOAL</dt><dd>{route.end}</dd></div>
         </dl>
-        <p class="hero-route-note" data-overview-note>{initialRecommendation.note}</p>
       </section>
-
-      <a class="map-cta" href="#route-map" data-route-action="open-map" data-route-target="#route-map">
-        <span data-overview-cta>{initialRecommendation.cta}</span>
-        <span aria-hidden="true">↓</span>
-      </a>
     </header>
 
     <GuideRouteMap
@@ -83,10 +75,10 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
 
     {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
 
-    <aside class="verification-notice" aria-label="試作ルートについての注意">
-      <strong>{content.verification.title}</strong>
+    <details class="verification-notice">
+      <summary>{content.verification.title}</summary>
       <p>{content.verification.description}</p>
-    </aside>
+    </details>
 
     <section class="route-section" aria-labelledby="route-order-heading">
       <div class="section-heading">
@@ -224,42 +216,40 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
 
 <style>
   .route-page {
-    --guide-bg: #f6f4ef;
-    --guide-card: #ffffff;
-    --guide-text: #2f3437;
-    --guide-sub: #6f7477;
-    --guide-border: #ddd8cf;
-    --guide-accent: #456f73;
-    --guide-accent-soft: #e8efee;
-    --guide-notice-bg: #f5efe2;
-    --guide-notice-text: #6e5732;
-    padding: 24px 20px 80px;
+    --guide-bg: var(--bg);
+    --guide-card: var(--card);
+    --guide-text: var(--text);
+    --guide-sub: var(--sub);
+    --guide-border: var(--border);
+    --guide-accent: var(--primary);
+    --guide-accent-soft: var(--primary-soft);
+    --guide-secondary: var(--secondary);
+    --guide-notice-bg: var(--secondary-soft);
+    --guide-notice-text: var(--text);
+    padding: 16px clamp(16px, 2vw, 32px) 80px;
     background: var(--guide-bg);
     color: var(--guide-text);
   }
-  .route-container { width: min(100%, 980px); margin: 0 auto; }
+  .route-container { width: 100%; max-width: 1680px; margin: 0 auto; }
   .breadcrumb { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; color: var(--guide-sub); font-size: 13px; }
   .breadcrumb a { color: var(--guide-accent); font-weight: 700; }
-  .route-hero { padding: clamp(22px, 4vw, 36px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
+  .route-hero { padding: clamp(16px, 2.4vw, 28px); background: var(--guide-card); border-top: 4px solid var(--guide-accent); }
   .route-hero h1 { max-width: 820px; font-size: clamp(29px, 5vw, 44px); line-height: 1.2; }
   .route-hero h1 span { display: block; margin-bottom: 5px; color: var(--guide-sub); font-size: .48em; font-weight: 700; letter-spacing: .02em; }
-  .hero-lead { max-width: 720px; margin: 10px 0 0; color: var(--guide-sub); font-size: 16px; }
-  .hero-route-result { display: grid; grid-template-columns: minmax(190px, .8fr) minmax(0, 1.7fr); gap: 10px 22px; margin-top: 16px; padding: 13px 16px; border: 1px solid #f1b38e; border-radius: 12px; background: #fff8f3; }
-  .hero-route-heading > p { margin: 0; color: #9a3412; font-size: 14px; font-weight: 800; }
-  .hero-route-result h2 { margin: 3px 0 0; padding: 0; border: 0; font-size: clamp(22px, 3vw, 26px); }
+  .hero-route-result { display: grid; grid-template-columns: minmax(220px, .75fr) minmax(0, 1.7fr); gap: 10px 24px; margin-top: 12px; padding: 12px 16px; border: 1px solid var(--guide-border); border-radius: 12px; background: var(--guide-accent-soft); }
+  .hero-route-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px; }
+  .hero-route-result h2 { margin: 0; padding: 0; border: 0; font-size: clamp(22px, 3vw, 26px); }
+  .route-status { display: inline-flex; min-height: 25px; align-items: center; padding: 2px 8px; border: 1px solid var(--guide-accent); border-radius: 999px; color: var(--guide-accent); font-size: 14px; font-weight: 800; }
   .hero-route-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 14px; margin: 0; align-content: center; }
   .hero-route-meta div { min-width: 0; }
   .hero-route-meta dt { color: var(--guide-sub); font-size: 14px; font-weight: 700; }
   .hero-route-meta dd { margin: 2px 0 0; font-size: 16px; font-weight: 800; line-height: 1.4; }
-  .hero-route-note { grid-column: 1 / -1; margin: 0; color: var(--guide-sub); font-size: 14px; line-height: 1.5; }
-  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 14px; padding: 11px 17px; border-radius: 8px; background: #e85d18; color: #fff; font-weight: 800; }
-  .map-cta:hover { background: #c94a0d; }
-  .map-cta span:last-child { font-size: 18px; }
   .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
-  .verification-notice strong, .verification-notice p { color: var(--guide-notice-text); }
+  .verification-notice summary, .verification-notice p { color: var(--guide-notice-text); }
+  .verification-notice summary { font-weight: 800; cursor: pointer; }
   .verification-notice p { margin: 4px 0 0; }
-  .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
-  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .route-section { max-width: 1120px; margin: 30px auto 0; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 14px; font-weight: 700; }
   .section-heading h2, .option-section h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
   .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
   .route-timeline { margin: 30px 0 0; padding: 0; list-style: none; }
@@ -281,17 +271,17 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
   .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   .step-actions a { padding: 8px 11px; border: 1px solid var(--guide-border); border-radius: 3px; background: #fff; color: var(--guide-accent); font-size: 13px; font-weight: 800; }
   .exit-option { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--guide-border); }
-  .exit-option > button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid #795548; border-radius: 4px; background: #fff; color: #604137; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
-  .exit-option > button span:first-child { padding-right: 8px; border-right: 1px solid #bda49c; font-size: 11px; }
-  .exit-option > button:focus-visible, .exit-option-panel a:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
-  .exit-option-panel { margin-top: 10px; padding: 15px; border-left: 3px solid #795548; background: #f8f3ef; }
+  .exit-option > button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--guide-secondary); border-radius: 4px; background: #fff; color: var(--guide-secondary); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .exit-option > button span:first-child { padding-right: 8px; border-right: 1px solid var(--guide-border); font-size: 14px; }
+  .exit-option > button:focus-visible, .exit-option-panel a:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
+  .exit-option-panel { margin-top: 10px; padding: 15px; border-left: 3px solid var(--guide-secondary); background: var(--guide-secondary-soft, var(--secondary-soft)); }
   .exit-option-panel h4 { margin: 0; font-size: 16px; }
   .exit-option-panel > p { margin: 6px 0 0; color: var(--guide-sub); font-size: 13px; }
   .exit-option-panel dl { display: grid; gap: 7px; margin: 10px 0 0; }
   .exit-option-panel dl div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; }
   .exit-option-panel dt { color: var(--guide-sub); font-size: 12px; font-weight: 800; }
   .exit-option-panel dd { margin: 0; font-size: 13px; }
-  .exit-option-panel a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; padding: 9px 12px; border-radius: 4px; background: #604137; color: #fff; font-size: 13px; font-weight: 800; }
+  .exit-option-panel a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; padding: 9px 12px; border-radius: 4px; background: var(--guide-secondary); color: #fff; font-size: 14px; font-weight: 800; }
   .break-card { grid-column: 2; margin-top: 10px; padding: 14px 16px; border-left: 3px solid var(--guide-accent); background: var(--guide-accent-soft); }
   .break-card p { margin: 0; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
   .break-card h3 { margin: 2px 0; font-size: 17px; }
@@ -306,11 +296,10 @@ const initialVariant = routeVariants[initialRecommendation.routeVariant];
   .check-section ul { margin: 20px 0 0; padding-left: 20px; }
   .check-section li + li { margin-top: 8px; }
   @media (max-width: 720px) {
-    .route-page { padding: 14px 12px 56px; }
-    .route-hero { padding: 20px 16px 22px; }
+    .route-page { padding: 12px 12px 56px; }
+    .route-hero { padding: 16px 14px 18px; }
     .hero-route-result { grid-template-columns: 1fr; }
     .hero-route-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .map-cta { width: 100%; justify-content: center; }
     .route-section { padding: 20px 14px; }
     .timeline-item { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }
     .timeline-item:not(:last-child)::before { left: 18px; }

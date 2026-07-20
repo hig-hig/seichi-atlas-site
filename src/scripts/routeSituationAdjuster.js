@@ -39,8 +39,9 @@ const updatePageOverview = (detail) => {
   document.querySelectorAll("[data-overview-route]").forEach((element) => { element.textContent = detail.label; });
   document.querySelectorAll("[data-overview-timing]").forEach((element) => { element.textContent = detail.timing; });
   document.querySelectorAll("[data-overview-spots]").forEach((element) => { element.textContent = `${detail.spotCount}地点`; });
-  document.querySelectorAll("[data-overview-note]").forEach((element) => { element.textContent = detail.note; });
-  document.querySelectorAll("[data-overview-cta]").forEach((element) => { element.textContent = detail.cta; });
+  document.querySelectorAll("[data-overview-status]").forEach((element) => {
+    element.textContent = detail.fieldVerified ? "確認済み" : (detail.routeVariant === "standard" ? "現地未確認" : "推定・現地未確認");
+  });
 };
 
 export function setupRouteSituationAdjusters() {
@@ -73,6 +74,7 @@ export function setupRouteSituationAdjusters() {
         timing: currentResult.timing,
         note: currentResult.note,
         spotCount: routeVariant.visibleSpotCount,
+        fieldVerified: routeVariant.fieldVerified ?? routeVariant.verified ?? false,
         cta: currentResult.cta,
       };
     };

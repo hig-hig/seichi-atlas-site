@@ -44,7 +44,6 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
 
 <section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading" tabindex="-1">
   <div class="section-heading">
-    <p class="section-label">ルート地図</p>
     <h2 id="route-map-heading">{sectionTitle}</h2>
     <p>{description}</p>
   </div>
@@ -59,7 +58,9 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     <li data-legend-layer="exit" hidden><span class="legend-symbol legend-exit" aria-hidden="true">→</span>省略地点</li>
   </ul>
   <p class="route-variant-notice" data-route-variant-notice hidden></p>
-  <div class="map-layer-controls" aria-label="地図の表示切替">
+  <details class="map-tools">
+    <summary>表示項目</summary>
+    <div class="map-layer-controls" aria-label="地図の表示切替">
     <button type="button" aria-pressed="true" data-map-layer="spots" data-route-action="toggle-map-layer" data-route-target="spots:visible">
       <span class="map-layer-check" aria-hidden="true">✓</span>
       <span>聖地スポット</span>
@@ -80,7 +81,8 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       <span>大吉山を省略</span>
       <small>表示中</small>
     </button>
-  </div>
+    </div>
+  </details>
   <div class="route-map-shell">
     <div class="map-route-switcher" data-map-route-switcher>
       <button type="button" class="map-route-toggle" aria-expanded="false" aria-controls="map-route-panel" data-map-route-toggle>
@@ -114,53 +116,57 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
 </section>
 
 <style>
-  .route-section { margin-top: 30px; padding: clamp(24px, 4vw, 36px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
+  .route-section { margin-top: 30px; padding: clamp(16px, 2vw, 28px); border-top: 1px solid var(--guide-border); background: var(--guide-card); }
   .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 14px; font-weight: 700; }
   .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 32px); }
   .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
-  .map-section { margin-top: 14px; scroll-margin-top: 88px; }
+  .map-section { width: 100%; max-width: none; margin-top: 10px; scroll-margin-top: 88px; }
   .map-section:focus { outline: none; }
   .map-result-summary { margin: 18px 0 0; padding: 11px 13px; border-radius: 8px; background: var(--guide-accent-soft); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
   .map-legend { display: flex; flex-wrap: wrap; gap: 7px 16px; margin: 10px 2px 0; padding: 0; color: var(--guide-sub); font-size: 14px; line-height: 1.5; list-style: none; }
   .map-legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
   .map-legend li[hidden] { display: none; }
   .legend-symbol { display: inline-grid; flex: 0 0 auto; place-items: center; color: #fff; font: 800 14px/1 "Noto Sans JP", sans-serif; }
-  .legend-route { width: 30px; height: 5px; border: 3px solid rgba(255,255,255,.96); border-radius: 8px; background: #f26a21; box-shadow: 0 0 0 1px rgba(47,52,55,.16); }
-  .legend-spot { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; background: #e85d18; box-shadow: 0 0 0 1px rgba(47,52,55,.18); }
-  .legend-rest { min-width: 24px; height: 20px; padding: 0 4px; border-radius: 4px; background: #8a5a00; }
-  .legend-information { width: 22px; height: 20px; border-radius: 12px; background: #075985; }
-  .legend-exit { width: 25px; height: 20px; padding-right: 3px; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%); background: #b43a2f; }
+  .legend-route { width: 30px; height: 5px; border: 3px solid rgba(255,255,255,.96); border-radius: 8px; background: var(--guide-accent); box-shadow: 0 0 0 1px rgba(23,48,66,.16); }
+  .legend-spot { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; background: var(--guide-accent); box-shadow: 0 0 0 1px rgba(23,48,66,.18); }
+  .legend-rest { min-width: 24px; height: 20px; padding: 0 4px; border-radius: 4px; background: #5d6f2f; }
+  .legend-information { width: 22px; height: 20px; border-radius: 12px; background: #3157a4; }
+  .legend-exit { width: 25px; height: 20px; padding-right: 3px; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%); background: #b5424a; }
   .route-variant-notice { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
-  .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #f26a21; border-radius: 6px; background: #fff2e8; color: #9a3412; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .map-tools { margin-top: 12px; color: var(--guide-sub); font-size: 14px; }
+  .map-tools summary { width: fit-content; color: var(--guide-secondary); font-weight: 800; cursor: pointer; }
+  .map-tools summary:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
+  .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .map-layer-controls button { display: inline-flex; min-height: 42px; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--guide-accent); border-radius: 6px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
   .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
-  .map-layer-controls button:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
+  .map-layer-controls button:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 2px; }
   .map-layer-controls small { font-size: 14px; font-weight: 700; }
-  .route-map-shell { position: relative; height: min(68vh, 620px); min-height: 430px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+  .route-map-shell { position: relative; height: min(68vh, 680px); min-height: 430px; margin-top: 14px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 8px; }
   .map-route-switcher { position: absolute; z-index: 3; top: 10px; left: 10px; width: min(320px, calc(100% - 20px)); font-size: 14px; }
-  .map-route-toggle { display: flex; max-width: 100%; min-height: 42px; align-items: center; gap: 6px; padding: 8px 13px; border: 1px solid #e85d18; border-radius: 8px; background: #fff; color: #9a3412; font: inherit; font-weight: 800; line-height: 1.35; text-align: left; box-shadow: 0 2px 5px rgba(47,52,55,.18); cursor: pointer; }
-  .map-route-toggle span + span::before { content: "｜"; color: #c66b3c; }
-  .map-route-toggle[aria-expanded="true"] { background: #fff2e8; }
-  .map-route-panel { margin-top: 7px; padding: 13px; border: 1px solid #ded8d2; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 3px 9px rgba(47,52,55,.18); }
+  .map-route-toggle { display: flex; max-width: 100%; min-height: 42px; align-items: center; gap: 6px; padding: 8px 13px; border: 1px solid var(--guide-accent); border-radius: 8px; background: rgba(255,255,255,.97); color: var(--guide-text); font: inherit; font-weight: 800; line-height: 1.35; text-align: left; box-shadow: 0 2px 5px rgba(23,48,66,.14); cursor: pointer; }
+  .map-route-toggle span + span::before { content: "｜"; color: var(--guide-accent); }
+  .map-route-toggle[aria-expanded="true"] { background: var(--guide-accent-soft); }
+  .map-route-panel { margin-top: 7px; padding: 13px; border: 1px solid var(--guide-border); border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 3px 9px rgba(23,48,66,.14); }
   .map-route-panel[hidden] { display: none; }
   .map-route-panel p { margin: 0; line-height: 1.5; }
   .map-route-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
-  .map-route-choices button { min-height: 38px; padding: 6px 8px; border: 1px solid #ded8d2; border-radius: 7px; background: #fff; color: var(--guide-text); font: inherit; font-weight: 700; cursor: pointer; }
-  .map-route-choices button:hover { background: #fff8f3; }
-  .map-route-choices button[aria-pressed="true"] { border-color: #f26a21; background: #fff2e8; color: #9a3412; }
-  .map-route-panel a { display: inline-block; margin-top: 10px; color: #9a3412; font-weight: 800; text-decoration: underline; }
-  .map-route-toggle:focus-visible, .map-route-choices button:focus-visible, .map-route-panel a:focus-visible { outline: 3px solid #f26a21; outline-offset: 2px; }
+  .map-route-choices button { min-height: 38px; padding: 6px 8px; border: 1px solid var(--guide-border); border-radius: 7px; background: #fff; color: var(--guide-text); font: inherit; font-weight: 700; cursor: pointer; }
+  .map-route-choices button:hover { background: var(--guide-accent-soft); }
+  .map-route-choices button[aria-pressed="true"] { border-color: var(--guide-accent); background: var(--guide-accent-soft); color: var(--guide-text); }
+  .map-route-panel a { display: inline-block; margin-top: 10px; color: var(--guide-secondary); font-weight: 800; text-decoration: underline; }
+  .map-route-toggle:focus-visible, .map-route-choices button:focus-visible, .map-route-panel a:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 2px; }
   #guide-route-map { width: 100%; height: 100%; }
   .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-attribution-note a { text-decoration: underline; }
   .map-adjuster-link { margin: 12px 0 0; font-size: 14px; font-weight: 800; text-align: center; }
-  .map-adjuster-link a { color: #9a3412; text-decoration: underline; text-underline-offset: 3px; }
-  :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #e85d18; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.22); cursor: pointer; }
+  .map-adjuster-link a { color: var(--guide-secondary); text-decoration: underline; text-underline-offset: 3px; }
+  :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #008c95; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(23,48,66,.20); cursor: pointer; }
+  :global(.route-map-marker.is-selected) { background: #3157a4; }
   :global(.route-map-marker[hidden]), :global(.route-support-marker[hidden]), :global(.route-exit-marker[hidden]) { display: none; }
-  :global(.route-support-marker) { display: grid; place-items: center; min-width: 76px; min-height: 32px; padding: 4px 7px; border: 2px solid #fff; border-radius: 4px; background: #8a5a00; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
-  :global(.route-support-marker--information) { border-radius: 18px; background: #075985; }
-  :global(.route-support-marker--information-toilet) { min-width: 96px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #5b4a9c; }
-  :global(.route-exit-marker) { display: grid; place-items: center; min-width: 82px; min-height: 34px; padding: 4px 12px 4px 9px; border: 2px solid #fff; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); background: #b43a2f; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
+  :global(.route-support-marker) { display: grid; place-items: center; min-width: 76px; min-height: 32px; padding: 4px 7px; border: 2px solid #fff; border-radius: 4px; background: #5d6f2f; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(23,48,66,.22); cursor: pointer; }
+  :global(.route-support-marker--information) { border-radius: 18px; background: #3157a4; }
+  :global(.route-support-marker--information-toilet) { min-width: 96px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #5a4e91; }
+  :global(.route-exit-marker) { display: grid; place-items: center; min-width: 82px; min-height: 34px; padding: 4px 12px 4px 9px; border: 2px solid #fff; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); background: #b5424a; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(23,48,66,.22); cursor: pointer; }
   :global(.maplibregl-popup-content) { padding: 12px 14px; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; }
   :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 14px; }
   :global(.route-support-popup) { max-width: 280px; }
@@ -169,7 +175,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
   :global(.route-support-popup dt) { font-weight: 800; }
   :global(.route-support-popup dd) { margin: 0; }
   :global(.route-support-popup p), :global(.maplibregl-popup-content p) { margin: 8px 0 0; font-size: 14px; line-height: 1.6; }
-  :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #456f73; font-size: 14px; font-weight: 800; }
+  :global(.maplibregl-popup-content a) { display: inline-block; margin-top: 5px; color: #3157a4; font-size: 14px; font-weight: 800; }
   @media (max-width: 720px) {
     .route-section { padding: 20px 14px; }
     .map-layer-controls { display: grid; grid-template-columns: 1fr; }
@@ -311,6 +317,8 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       popupContent.append(popupName, popupLink);
 
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
+      popup.on("open", () => markerElement.classList.add("is-selected"));
+      popup.on("close", () => markerElement.classList.remove("is-selected"));
       const marker = new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
@@ -556,7 +564,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
         source: "guide-route",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#f26a21",
+          "line-color": "#008c95",
           "line-width": narrowMapMedia.matches ? 5.5 : 5,
           "line-opacity": 1,
         },
