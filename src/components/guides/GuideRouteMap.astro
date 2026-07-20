@@ -23,6 +23,12 @@ const formatJapaneseDate = (date) => {
 const supportFacilitiesJson = JSON.stringify(supportFacilities.map((facility) => ({
   ...facility,
   categoriesLabel: facility.categories.map((category) => categoryLabels[category] ?? category).join("・"),
+  markerLabel: facility.categories.includes("rest")
+    ? "トイレ・休憩"
+    : facility.categories.includes("toilet") ? "観光案内・トイレ" : "観光案内",
+  markerVariant: facility.categories.includes("rest")
+    ? "rest"
+    : facility.categories.includes("toilet") ? "information-toilet" : "information",
   verificationSummary: `${formatJapaneseDate(facility.sourceUpdatedAt)}更新の公式情報を、${formatJapaneseDate(facility.verifiedAt)}に確認`,
   fieldCheckLabel: facility.fieldChecked ? "現地確認済み" : "現地未確認",
 }))).replace(/</g, "\\u003c");
@@ -61,6 +67,8 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   .map-attribution-note a { text-decoration: underline; }
   :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #456f73; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.22); cursor: pointer; }
   :global(.route-support-marker) { display: grid; place-items: center; min-width: 84px; height: 32px; padding: 0 9px; border: 2px solid #fff; border-radius: 4px; background: #72552f; color: #fff; font: 800 11px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
+  :global(.route-support-marker--information) { border-radius: 18px; background: #315f78; }
+  :global(.route-support-marker--information-toilet) { min-width: 112px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #584f78; }
   :global(.maplibregl-popup-content) { padding: 12px 14px; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; }
   :global(.maplibregl-popup-content strong) { display: block; max-width: 220px; font-size: 13px; }
   :global(.route-support-popup) { max-width: 280px; }
@@ -125,10 +133,10 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
 
     supportFacilities.forEach((facility) => {
       const markerElement = document.createElement("button");
-      markerElement.className = "route-support-marker";
+      markerElement.className = `route-support-marker route-support-marker--${facility.markerVariant}`;
       markerElement.type = "button";
-      markerElement.textContent = "トイレ・休憩";
-      markerElement.setAttribute("aria-label", `ルート支援設備：${facility.name}（トイレ・休憩）`);
+      markerElement.textContent = facility.markerLabel;
+      markerElement.setAttribute("aria-label", `ルート支援設備：${facility.name}（${facility.markerLabel}）`);
 
       const popupContent = document.createElement("div");
       popupContent.className = "route-support-popup";
@@ -147,8 +155,11 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       appendDetail("設備", facility.categoriesLabel);
       appendDetail("住所", facility.address);
       appendDetail("案内時間", facility.openingHours);
-      appendDetail("確認状態", facility.verificationLabel);
-      appendDetail("公式情報", facility.verificationSummary);
+      appendDetail("施設情報", facility.verificationLabel);
+      if (facility.locationVerificationLabel) {
+        appendDetail("位置情報", facility.locationVerificationLabel);
+      }
+      appendDetail("確認日", facility.verificationSummary);
       appendDetail("現地確認", facility.fieldCheckLabel);
       const note = document.createElement("p");
       note.textContent = facility.note;
@@ -156,8 +167,24 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       sourceLink.href = facility.sourceUrl;
       sourceLink.target = "_blank";
       sourceLink.rel = "noopener noreferrer";
-      sourceLink.textContent = facility.sourceName;
+      sourceLink.textContent = `施設情報：${facility.sourceName}`;
       popupContent.append(popupName, details, note, sourceLink);
+      if (facility.secondarySourceUrl) {
+        const secondarySourceLink = document.createElement("a");
+        secondarySourceLink.href = facility.secondarySourceUrl;
+        secondarySourceLink.target = "_blank";
+        secondarySourceLink.rel = "noopener noreferrer";
+        secondarySourceLink.textContent = `設備補足：${facility.secondarySourceName}`;
+        popupContent.append(secondarySourceLink);
+      }
+      if (facility.locationSourceUrl) {
+        const locationSourceLink = document.createElement("a");
+        locationSourceLink.href = facility.locationSourceUrl;
+        locationSourceLink.target = "_blank";
+        locationSourceLink.rel = "noopener noreferrer";
+        locationSourceLink.textContent = `位置情報：${facility.locationSourceName}`;
+        popupContent.append(locationSourceLink);
+      }
 
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
       new maplibregl.Marker({ element: markerElement, anchor: "bottom", offset: [54, 0] })
