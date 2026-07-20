@@ -123,6 +123,10 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
                 <span class="endpoint-badge" data-timeline-endpoint hidden={spot.order !== 1 && spot.order !== routeSpots.length}>{spot.order === 1 ? "START" : spot.order === routeSpots.length ? "GOAL" : ""}</span>
               </div>
               <p class="stay-badge">滞在 {spot.stay}</p>
+              <button type="button" class="timeline-map-button" aria-pressed="false" data-timeline-map-button>
+                <span>地図で見る</span>
+                <span class="timeline-selected-label" data-timeline-selected-label hidden>選択中</span>
+              </button>
 
               <details class="timeline-details">
                 <summary>詳細</summary>
@@ -301,6 +305,13 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
   .endpoint-badge { grid-column: 1 / -1; width: fit-content; padding: 2px 8px; border: 1px solid var(--guide-accent); border-radius: 999px; color: var(--guide-accent); font-size: 14px; font-weight: 900; }
   .timeline-item.is-goal .endpoint-badge { border-color: var(--guide-secondary); color: var(--guide-secondary); }
   .stay-badge { margin: 12px 0 0; color: var(--guide-text); font-size: 14px; font-weight: 800; }
+  .timeline-map-button { display: inline-flex; min-height: 40px; align-items: center; gap: 8px; margin-top: 10px; padding: 7px 11px; border: 1px solid var(--guide-accent); border-radius: 7px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .timeline-map-button:hover { background: var(--guide-card); }
+  .timeline-map-button:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
+  .timeline-selected-label { padding-left: 8px; border-left: 1px solid var(--guide-accent); color: var(--guide-secondary); }
+  .timeline-selected-label[hidden] { display: none; }
+  .timeline-item.is-selected .timeline-card { border: 2px solid var(--guide-secondary); background: var(--secondary-soft); }
+  .timeline-item.is-selected .timeline-map-button { border-color: var(--guide-secondary); background: var(--guide-card); }
   .timeline-details { margin-top: 12px; border-top: 1px solid var(--guide-border); padding-top: 8px; color: var(--guide-sub); font-size: 14px; }
   .timeline-transfer { display: grid; justify-items: center; gap: 5px; margin: 0; color: var(--guide-sub); font-size: 14px; font-weight: 800; line-height: 1.35; text-align: center; }
   .timeline-transfer > span:first-child { width: 100%; color: var(--guide-accent); font-size: 28px; line-height: 1; }

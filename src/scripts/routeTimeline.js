@@ -1,3 +1,5 @@
+import { setRouteSpotSelection } from "./routeSpotSelection.js";
+
 const setEndpoint = (item, label) => {
   const badge = item.querySelector("[data-timeline-endpoint]");
   badge.textContent = label;
@@ -17,6 +19,30 @@ export function setupRouteTimelines() {
     const start = root.querySelector("[data-timeline-start]");
     const goal = root.querySelector("[data-timeline-goal]");
     const omitted = root.querySelector("[data-timeline-omitted]");
+    const scroller = root.querySelector(".route-timeline");
+    const desktopTimeline = window.matchMedia("(min-width: 721px)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const renderSelection = (slug, source) => {
+      items.forEach((item) => {
+        const selected = Boolean(slug) && item.dataset.timelineSpot === slug && !item.hidden;
+        item.classList.toggle("is-selected", selected);
+        const button = item.querySelector("[data-timeline-map-button]");
+        const label = item.querySelector("[data-timeline-selected-label]");
+        button.setAttribute("aria-pressed", String(selected));
+        if (label) label.hidden = !selected;
+      });
+
+      if (!slug || source !== "map" || !desktopTimeline.matches) return;
+      const selectedItem = items.find((item) => item.dataset.timelineSpot === slug && !item.hidden);
+      if (!selectedItem) return;
+      const scrollerRect = scroller.getBoundingClientRect();
+      const itemRect = selectedItem.getBoundingClientRect();
+      let left = 0;
+      if (itemRect.left < scrollerRect.left) left = itemRect.left - scrollerRect.left - 12;
+      else if (itemRect.right > scrollerRect.right) left = itemRect.right - scrollerRect.right + 12;
+      if (left) scroller.scrollBy({ left, behavior: reducedMotion.matches ? "auto" : "smooth" });
+    };
 
     const render = (detail) => {
       const variant = variants[detail.routeVariant];
@@ -24,6 +50,8 @@ export function setupRouteTimelines() {
       const visibleSlugs = variant.visibleSpotSlugs || [];
       const visibleSet = new Set(visibleSlugs);
       const visibleItems = items.filter((item) => visibleSet.has(item.dataset.timelineSpot));
+
+      if (window.routeSelectedSpotSlug) setRouteSpotSelection(null, "route");
 
       items.forEach((item) => {
         item.hidden = !visibleSet.has(item.dataset.timelineSpot);
@@ -62,10 +90,23 @@ export function setupRouteTimelines() {
       }
     };
 
+    root.querySelectorAll("[data-timeline-map-button]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = button.closest("[data-timeline-spot]");
+        if (!item || item.hidden) return;
+        setRouteSpotSelection(item.dataset.timelineSpot, "timeline");
+      });
+    });
+
+    window.addEventListener("route:spot-select", (event) => {
+      renderSelection(event.detail.slug, event.detail.source);
+    });
+
     window.addEventListener("route:recommendation-change", (event) => render(event.detail));
     render(window.routeSituationState || {
       routeVariant: root.dataset.initialRouteVariant,
       timing: root.dataset.initialTiming,
     });
+    renderSelection(window.routeSelectedSpotSlug || null, "initial");
   });
 }

@@ -191,6 +191,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
 <script>
   import maplibregl from "maplibre-gl";
   import "maplibre-gl/dist/maplibre-gl.css";
+  import { setRouteSpotSelection } from "../../scripts/routeSpotSelection.js";
 
   const dataElement = document.getElementById("guide-route-map-data");
   const routeLocations = JSON.parse(dataElement?.textContent || "[]");
@@ -227,7 +228,9 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
     let pendingMapState = window.routeSituationPendingMapAction || null;
     let activeSpotSlugs = new Set(routeLocations.map((location) => location.slug));
     let currentRouteCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
+    let pendingSpotSelection = null;
     const narrowMapMedia = window.matchMedia("(max-width: 720px)");
+    const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
     const markerFocusStates = new WeakMap();
     const registerMarkerFocus = (marker) => {
       const element = marker.getElement();
@@ -317,14 +320,20 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       popupContent.append(popupName, popupLink);
 
       const popup = new maplibregl.Popup({ offset: 24 }).setDOMContent(popupContent);
-      popup.on("open", () => markerElement.classList.add("is-selected"));
-      popup.on("close", () => markerElement.classList.remove("is-selected"));
       const marker = new maplibregl.Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
         .addTo(map);
       marker.routeLocation = location;
       marker.popupNameElement = popupName;
+      popup.on("open", () => {
+        const source = marker.popupSelectionSource || "map";
+        marker.popupSelectionSource = null;
+        setRouteSpotSelection(location.slug, source);
+      });
+      popup.on("close", () => {
+        if (window.routeSelectedSpotSlug === location.slug) setRouteSpotSelection(null, "map");
+      });
       registerMarkerFocus(marker);
       layerMarkers.spots.push(marker);
       routeMarkers.set(location.slug, marker);
@@ -491,6 +500,20 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       .map((marker) => marker.getLngLat().toArray());
     const closeAllPopups = () => Object.values(layerMarkers).flat()
       .forEach((marker) => marker.getPopup()?.remove());
+    const focusTimelineSpot = (slug) => {
+      if (!mapLoaded) {
+        pendingSpotSelection = slug;
+        return;
+      }
+      const marker = routeMarkers.get(slug);
+      if (!marker || marker.getElement().hidden || !activeSpotSlugs.has(slug)) return;
+      map.easeTo({
+        center: marker.getLngLat(),
+        duration: reducedMotionMedia.matches ? 0 : 180,
+      });
+      marker.popupSelectionSource = "timeline";
+      if (!marker.getPopup().isOpen()) marker.togglePopup();
+    };
     const applyMapState = (state) => {
       if (!state) return;
       pendingMapState = state;
@@ -500,6 +523,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       if (!mapLoaded) return;
       const routeVariant = routeVariants[state.routeVariantId];
       if (!routeVariant) return;
+      setRouteSpotSelection(null, "route");
       const routeSource = map.getSource("guide-route");
       const geometry = routeVariant.geometry || { type: "FeatureCollection", features: [] };
       routeSource.setData(geometry);
@@ -518,6 +542,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
         const marker = routeMarkers.get(action.spotSlug);
         if (!marker || marker.getElement().hidden) return;
         map.easeTo({ center: marker.getLngLat(), duration: 300 });
+        marker.popupSelectionSource = "route";
         if (!marker.getPopup().isOpen()) marker.togglePopup();
       } else if (action.type === "show-exit") {
         setLayerVisibility("exit", true);
@@ -542,6 +567,12 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       if (summaryElement) summaryElement.textContent = event.detail.summary;
     });
     window.addEventListener("route:apply-map-action", (event) => applyMapState(event.detail));
+    window.addEventListener("route:spot-select", (event) => {
+      routeMarkers.forEach((marker, slug) => {
+        marker.getElement().classList.toggle("is-selected", Boolean(event.detail.slug) && slug === event.detail.slug);
+      });
+      if (event.detail.source === "timeline" && event.detail.slug) focusTimelineSpot(event.detail.slug);
+    });
     window.addEventListener("route:show-exit", (event) => {
       const marker = exitMarkers.get(event.detail.exitOption);
       if (!marker || !mapLoaded) return;
@@ -589,6 +620,12 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       mapLoaded = true;
       if (pendingMapState) applyMapState(pendingMapState);
       else fitPoints([...currentRouteCoordinates, ...visibleMarkerPoints()]);
+      if (pendingSpotSelection) {
+        const slug = pendingSpotSelection;
+        pendingSpotSelection = null;
+        setRouteSpotSelection(slug, "route");
+        focusTimelineSpot(slug);
+      }
     });
   }
 </script>
