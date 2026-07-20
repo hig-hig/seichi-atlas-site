@@ -6,7 +6,7 @@ const {
   route,
   routeSpots,
   optionSpot,
-  routeGeometry,
+  routeVariants,
   content,
 } = Astro.props;
 
@@ -66,13 +66,13 @@ const mapExitPoints = exitOptions.map((option) => {
       <p>{content.verification.description}</p>
     </aside>
 
-    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} />}
+    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
 
     <GuideRouteMap
       locations={mapLocations}
       supportFacilities={route.supportFacilities ?? []}
       exitPoints={mapExitPoints}
-      routeGeometry={routeGeometry}
+      routeVariants={routeVariants}
       sectionTitle={content.map.title}
       description={content.map.description}
       mapAriaLabel={content.map.ariaLabel}

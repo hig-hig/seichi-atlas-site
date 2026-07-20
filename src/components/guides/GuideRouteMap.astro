@@ -3,7 +3,7 @@ const {
   locations,
   supportFacilities = [],
   exitPoints = [],
-  routeGeometry,
+  routeVariants = {},
   sectionTitle,
   description,
   mapAriaLabel,
@@ -35,7 +35,7 @@ const supportFacilitiesJson = JSON.stringify(supportFacilities.map((facility) =>
   fieldCheckLabel: facility.fieldChecked ? "現地確認済み" : "現地未確認",
 }))).replace(/</g, "\\u003c");
 const exitPointsJson = JSON.stringify(exitPoints).replace(/</g, "\\u003c");
-const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
+const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c");
 ---
 
 <section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading" tabindex="-1">
@@ -45,7 +45,10 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
     <p>{description}</p>
   </div>
   <p class="map-result-summary" data-map-result-summary aria-live="polite">
-    <strong>現在の表示：</strong><span>標準ルート｜約4時間30分</span>
+    <strong>現在の表示：</strong><span>標準ルート｜9地点</span>
+  </p>
+  <p class="route-variant-notice" data-route-variant-notice hidden>
+    短縮接続経路は徒歩ルーティングによる推定です。現地歩行は未確認です。
   </p>
   <div class="map-layer-controls" aria-label="地図の表示切替">
     <button type="button" aria-pressed="true" data-map-layer="spots" data-route-action="toggle-map-layer" data-route-target="spots:visible">
@@ -81,7 +84,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   <script type="application/json" id="guide-route-map-data" set:html={locationsJson}></script>
   <script type="application/json" id="guide-route-support-data" set:html={supportFacilitiesJson}></script>
   <script type="application/json" id="guide-route-exit-data" set:html={exitPointsJson}></script>
-  <script type="application/json" id="guide-route-geometry-data" set:html={geometryJson}></script>
+  <script type="application/json" id="guide-route-variants-data" set:html={routeVariantsJson}></script>
 </section>
 
 <style>
@@ -92,6 +95,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   .map-section { scroll-margin-top: 88px; }
   .map-section:focus { outline: none; }
   .map-result-summary { margin: 18px 0 0; padding: 11px 13px; border-radius: 8px; background: var(--guide-accent-soft); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+  .route-variant-notice { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
   .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--guide-accent); border-radius: 4px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
   .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
@@ -102,6 +106,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-attribution-note a { text-decoration: underline; }
   :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #456f73; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.22); cursor: pointer; }
+  :global(.route-map-marker[hidden]), :global(.route-support-marker[hidden]), :global(.route-exit-marker[hidden]) { display: none; }
   :global(.route-support-marker) { display: grid; place-items: center; min-width: 84px; min-height: 34px; padding: 5px 9px; border: 2px solid #fff; border-radius: 4px; background: #72552f; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 6px rgba(47,52,55,.28); cursor: pointer; }
   :global(.route-support-marker--information) { border-radius: 18px; background: #315f78; }
   :global(.route-support-marker--information-toilet) { min-width: 112px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #584f78; }
@@ -134,8 +139,9 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   const supportFacilities = JSON.parse(supportDataElement?.textContent || "[]");
   const exitDataElement = document.getElementById("guide-route-exit-data");
   const exitPoints = JSON.parse(exitDataElement?.textContent || "[]");
-  const geometryElement = document.getElementById("guide-route-geometry-data");
-  const savedRouteGeometry = JSON.parse(geometryElement?.textContent || "null");
+  const variantsElement = document.getElementById("guide-route-variants-data");
+  const routeVariants = JSON.parse(variantsElement?.textContent || "{}");
+  const savedRouteGeometry = routeVariants.standard?.geometry || { type: "FeatureCollection", features: [] };
   const mapContainer = document.getElementById("guide-route-map");
   const initialCenter = JSON.parse(mapContainer?.dataset.initialCenter || "[0,0]");
   const layerMarkers = {
@@ -147,11 +153,36 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
   const routeMarkers = new Map();
   const exitMarkers = new Map();
   const summaryElement = document.querySelector("[data-map-result-summary] span");
+  const variantNotice = document.querySelector("[data-route-variant-notice]");
 
   if (mapContainer && routeLocations.length && mapContainer.dataset.ready !== "true") {
     mapContainer.dataset.ready = "true";
     let mapLoaded = false;
     let pendingMapState = window.routeSituationPendingMapAction || null;
+    let activeSpotSlugs = new Set(routeLocations.map((location) => location.slug));
+    let currentRouteCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
+    const markerFocusStates = new WeakMap();
+    const registerMarkerFocus = (marker) => {
+      const element = marker.getElement();
+      markerFocusStates.set(marker, {
+        hadTabindex: element.hasAttribute("tabindex"),
+        tabindex: element.getAttribute("tabindex"),
+      });
+    };
+    const setMarkerVisibility = (marker, visible) => {
+      const element = marker.getElement();
+      const focusState = markerFocusStates.get(marker);
+      element.hidden = !visible;
+      if (visible) {
+        element.removeAttribute("aria-hidden");
+        if (focusState?.hadTabindex) element.setAttribute("tabindex", focusState.tabindex);
+        else element.removeAttribute("tabindex");
+      } else {
+        element.setAttribute("aria-hidden", "true");
+        element.setAttribute("tabindex", "-1");
+        marker.getPopup()?.remove();
+      }
+    };
     const map = new maplibregl.Map({
       container: mapContainer,
       style: "https://tiles.openfreemap.org/styles/positron",
@@ -183,6 +214,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
         .addTo(map);
+      registerMarkerFocus(marker);
       layerMarkers.spots.push(marker);
       routeMarkers.set(location.slug, marker);
     });
@@ -247,6 +279,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         .setLngLat([facility.lng, facility.lat])
         .setPopup(popup)
         .addTo(map);
+      registerMarkerFocus(marker);
       marker.facility = facility;
       layerMarkers[facility.markerLayer].push(marker);
     });
@@ -270,18 +303,30 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         .setLngLat([exitPoint.lng, exitPoint.lat])
         .setPopup(popup)
         .addTo(map);
+      registerMarkerFocus(marker);
       layerMarkers.exit.push(marker);
       exitMarkers.set(exitPoint.id, marker);
     });
+
+    const syncSpotMarkerVisibility = () => {
+      const layerVisible = document.querySelector('[data-map-layer="spots"]')?.getAttribute("aria-pressed") === "true";
+      routeMarkers.forEach((marker, slug) => {
+        const visible = layerVisible && activeSpotSlugs.has(slug);
+        setMarkerVisibility(marker, visible);
+      });
+    };
 
     const setLayerVisibility = (layer, visible) => {
       const button = document.querySelector(`[data-map-layer="${layer}"]`);
       button.setAttribute("aria-pressed", String(visible));
       button.querySelector(".map-layer-check").textContent = visible ? "✓" : "—";
       button.querySelector("small").textContent = visible ? "表示中" : "非表示";
+      if (layer === "spots") {
+        syncSpotMarkerVisibility();
+        return;
+      }
       layerMarkers[layer].forEach((marker) => {
-        marker.getElement().hidden = !visible;
-        if (!visible) marker.getPopup()?.remove();
+        setMarkerVisibility(marker, visible);
       });
     };
 
@@ -307,17 +352,15 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       });
     };
 
-    const routeCoordinates = savedRouteGeometry?.features?.[0]?.geometry?.coordinates || [];
     const fitPoints = (points) => {
       if (!points.length) return;
       const bounds = new maplibregl.LngLatBounds(points[0], points[0]);
       points.slice(1).forEach((point) => bounds.extend(point));
       map.fitBounds(bounds, { padding: 54, maxZoom: 15, duration: 300 });
     };
-    const visibleMarkerPoints = () => Object.entries(layerMarkers).flatMap(([layer, markers]) => {
-      const visible = document.querySelector(`[data-map-layer="${layer}"]`)?.getAttribute("aria-pressed") === "true";
-      return visible ? markers.map((marker) => marker.getLngLat().toArray()) : [];
-    });
+    const visibleMarkerPoints = () => Object.values(layerMarkers).flat()
+      .filter((marker) => !marker.getElement().hidden)
+      .map((marker) => marker.getLngLat().toArray());
     const closeAllPopups = () => Object.values(layerMarkers).flat()
       .forEach((marker) => marker.getPopup()?.remove());
     const applyMapState = (state) => {
@@ -327,6 +370,15 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
         summaryElement.textContent = window.routeSituationMapSummary || state.action.summary;
       }
       if (!mapLoaded) return;
+      const routeVariant = routeVariants[state.routeVariantId];
+      if (!routeVariant) return;
+      const routeSource = map.getSource("guide-route");
+      const geometry = routeVariant.geometry || { type: "FeatureCollection", features: [] };
+      routeSource.setData(geometry);
+      currentRouteCoordinates = geometry.features?.[0]?.geometry?.coordinates || [];
+      activeSpotSlugs = new Set(routeVariant.visibleSpotSlugs || routeLocations.map((location) => location.slug));
+      syncSpotMarkerVisibility();
+      if (variantNotice) variantNotice.hidden = state.routeVariantId !== "shortWithoutDaikichiyama";
       applyLayerState(state.layers);
       closeAllPopups();
       const { action } = state;
@@ -349,9 +401,9 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
           .filter((marker) => marker.facility.categories.some((category) => categories.includes(category)));
         fitPoints(markers.map((marker) => marker.getLngLat().toArray()));
       } else if (action.type === "fit-current") {
-        fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
+        fitPoints([...currentRouteCoordinates, ...visibleMarkerPoints()]);
       } else if (action.type === "fit-route") {
-        fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
+        fitPoints([...currentRouteCoordinates, ...visibleMarkerPoints()]);
       }
     };
 
@@ -359,6 +411,13 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
       if (summaryElement) summaryElement.textContent = event.detail.summary;
     });
     window.addEventListener("route:apply-map-action", (event) => applyMapState(event.detail));
+    window.addEventListener("route:show-exit", (event) => {
+      const marker = exitMarkers.get(event.detail.exitOption);
+      if (!marker || !mapLoaded) return;
+      setLayerVisibility("exit", true);
+      map.easeTo({ center: marker.getLngLat(), duration: 300 });
+      if (!marker.getPopup().isOpen()) marker.togglePopup();
+    });
     if (window.routeSituationMapSummary && summaryElement) {
       summaryElement.textContent = window.routeSituationMapSummary;
     }
@@ -383,7 +442,7 @@ const geometryJson = JSON.stringify(routeGeometry).replace(/</g, "\\u003c");
 
       mapLoaded = true;
       if (pendingMapState) applyMapState(pendingMapState);
-      else fitPoints([...routeCoordinates, ...visibleMarkerPoints()]);
+      else fitPoints([...currentRouteCoordinates, ...visibleMarkerPoints()]);
     });
   }
 </script>

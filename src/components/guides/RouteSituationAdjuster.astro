@@ -1,6 +1,14 @@
 ---
-const { config } = Astro.props;
-const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
+const { config, routeVariants } = Astro.props;
+const routeVariantMetadata = Object.fromEntries(Object.entries(routeVariants).map(([id, variant]) => [id, {
+  id,
+  label: variant.label,
+  visibleSpotCount: variant.visibleSpotSlugs?.length,
+  fieldVerified: variant.fieldVerified,
+  verified: variant.verified,
+  note: variant.note,
+}]));
+const configJson = JSON.stringify({ ...config, routeVariants: routeVariantMetadata }).replace(/</g, "\\u003c");
 const initialSituation = config.situations[0];
 const initialResult = config.recommendations[initialSituation.recommendation];
 ---

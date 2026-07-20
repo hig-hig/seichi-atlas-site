@@ -25,7 +25,11 @@ const announceSummary = (summary) => {
 };
 
 const applyMapAction = (result) => {
-  const detail = { action: result.mapAction, layers: result.layers };
+  const detail = {
+    action: result.mapAction,
+    layers: result.layers,
+    routeVariantId: result.routeVariant,
+  };
   window.routeSituationPendingMapAction = detail;
   window.dispatchEvent(new CustomEvent("route:apply-map-action", { detail }));
 };
@@ -68,7 +72,9 @@ export function setupRouteSituationAdjusters() {
         secondaryLink.removeAttribute("href");
         secondaryLink.textContent = "";
       }
-      announceSummary(currentResult.mapAction.summary);
+      const routeVariant = config.routeVariants[currentResult.routeVariant];
+      const spotCount = routeVariant.visibleSpotCount;
+      announceSummary(`${currentResult.mapAction.summary}${Number.isInteger(spotCount) ? `｜${spotCount}地点` : ""}`);
       applyMapAction(currentResult);
     };
 
@@ -135,6 +141,8 @@ export function setupRouteSituationAdjusters() {
         layer_state: layerStateValue(currentResult.layers),
         map_action: currentResult.mapAction.type,
         map_target: mapTargetValue(currentResult.mapAction),
+        route_variant: currentResult.routeVariant,
+        visible_spot_count: config.routeVariants[currentResult.routeVariant].visibleSpotCount,
       }, null);
     });
 
