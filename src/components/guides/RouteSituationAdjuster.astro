@@ -32,9 +32,9 @@ const secondaryEntrySections = config.entrySections.filter((section) => section.
   </div>
 
   <div class="entry-sections">
-    {primaryEntrySections.map((section) => (
+    {primaryEntrySections.map((section, index) => (
       <fieldset class="entry-section">
-        <legend>{section.label}</legend>
+        <legend><span class="entry-step" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span>{section.label}</span></legend>
         <div class="situation-options">
           {section.recommendations.map((recommendation) => {
             const choice = choiceByRecommendation.get(recommendation);
@@ -54,7 +54,7 @@ const secondaryEntrySections = config.entrySections.filter((section) => section.
   </div>
 
   <details class="additional-adjustments">
-    <summary>さらに調整する</summary>
+    <summary><span>さらに細かく調整</span><small>休憩・追加時間</small></summary>
     {secondaryEntrySections.map((section) => (
       <fieldset class="entry-section entry-section--secondary">
         <legend class="visually-hidden">{section.label}</legend>
@@ -79,7 +79,7 @@ const secondaryEntrySections = config.entrySections.filter((section) => section.
   <div class="selection-actions">
     <p data-selection-status>条件を1つ選択</p>
     <div>
-      <button type="button" disabled data-recommendation-submit>おすすめを見る</button>
+      <button type="button" disabled data-recommendation-submit>この条件で見る</button>
       <a href={initialResult.href} data-standard-direct>標準ルートを見る</a>
     </div>
   </div>
@@ -113,68 +113,80 @@ const secondaryEntrySections = config.entrySections.filter((section) => section.
 </section>
 
 <style>
-  .situation-adjuster { width: min(100%, 1200px); margin: 18px auto 0; padding: 24px; background: var(--guide-card); font-size: 16px; line-height: 1.6; scroll-margin-top: 88px; }
+  .situation-adjuster { position: relative; width: min(100%, 1120px); margin: 20px auto 0; padding: clamp(22px, 3.4vw, 38px); overflow: hidden; border: 1px solid var(--guide-border); border-radius: 24px; background: var(--guide-card); box-shadow: 0 12px 32px rgba(18, 54, 68, .06); font-size: 16px; line-height: 1.6; scroll-margin-top: 88px; }
+  .situation-adjuster::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; background: var(--guide-accent); }
   .situation-adjuster:focus { outline: none; }
-  .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 4vw, 30px); }
-  .section-heading p { margin: 5px 0 0; color: var(--guide-sub); }
+  .section-heading { max-width: 720px; }
+  .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: clamp(24px, 3vw, 32px); line-height: 1.35; letter-spacing: -.01em; }
+  .section-heading p { margin: 6px 0 0; color: var(--guide-sub); font-size: 15px; }
   .information-details, .situation-criteria { margin-top: 16px; border-top: 1px solid var(--guide-border); color: var(--guide-sub); font-size: 14px; }
   .information-details summary, .situation-criteria summary { width: fit-content; padding: 12px 2px 2px; color: var(--guide-secondary); font-weight: 800; cursor: pointer; }
   .information-details ul { margin: 10px 0 0; padding-left: 1.4em; }
   .information-details p { margin: 10px 0 0; }
   summary:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
-  .entry-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-  .entry-section { min-width: 0; margin: 0; padding: 13px; border: 1px solid var(--guide-border); border-radius: 10px; }
-  .entry-section legend { padding: 0 6px; color: var(--guide-text); font-size: 16px; font-weight: 900; }
-  .situation-options { display: grid; gap: 8px; }
+  .entry-sections { display: grid; gap: 0; margin-top: 22px; }
+  .entry-section { min-width: 0; margin: 0; padding: 18px 0 20px 52px; border: 0; border-top: 1px solid var(--guide-border); }
+  .entry-section legend { margin-left: -52px; padding: 0; color: var(--guide-text); font-size: clamp(18px, 2vw, 21px); font-weight: 700; }
+  .entry-section legend > span { vertical-align: middle; }
+  .entry-step { display: inline-grid; width: 38px; height: 28px; place-items: center; margin-right: 14px; border-radius: 999px; background: var(--guide-accent-soft); color: var(--guide-accent-strong); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+  .situation-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
   .condition-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .choice-card { position: relative; display: grid; min-height: 82px; grid-template-rows: auto 1fr; gap: 2px; padding: 12px 40px 12px 13px; border: 1px solid var(--guide-border); border-radius: 10px; background: var(--guide-card); color: var(--guide-text); cursor: pointer; }
-  .choice-card:hover { border-color: var(--guide-accent); background: var(--guide-accent-soft); }
+  .choice-card { position: relative; display: grid; min-height: 80px; grid-template-rows: auto 1fr; align-content: center; gap: 3px; padding: 14px 42px 14px 16px; border: 1px solid var(--guide-border); border-radius: 15px; background: var(--guide-card); color: var(--guide-text); cursor: pointer; transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
+  .choice-card:hover { transform: translateY(-2px); border-color: var(--guide-accent); background: #f7fbfb; box-shadow: 0 7px 18px rgba(18, 54, 68, .06); }
   .choice-card:has(input:checked) { border: 2px solid var(--guide-accent); background: var(--guide-accent-soft); color: var(--guide-text); }
   .choice-card:has(input:focus-visible) { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
   .choice-card input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-  .choice-card strong { font-size: 16px; line-height: 1.4; }
+  .choice-card strong { font-size: 17px; font-weight: 700; line-height: 1.4; }
   .choice-card small { color: var(--guide-sub); font-size: 14px; line-height: 1.45; }
-  .selection-check { position: absolute; top: 12px; right: 12px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--guide-accent); color: #fff; font-size: 14px; font-weight: 900; }
+  .selection-check { position: absolute; top: 14px; right: 14px; display: grid; width: 23px; height: 23px; place-items: center; border-radius: 50%; background: var(--guide-accent); color: #fff; font-size: 14px; font-weight: 800; }
   .selection-check[hidden] { display: none; }
   .choice-card--condition { min-height: 76px; }
-  .additional-adjustments { margin-top: 14px; color: var(--guide-sub); }
-  .additional-adjustments > summary { width: fit-content; color: var(--guide-secondary); font-size: 14px; font-weight: 800; cursor: pointer; }
-  .entry-section--secondary { margin-top: 10px; padding: 0; border: 0; }
-  .selection-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--guide-border); }
+  .additional-adjustments { margin-top: 4px; padding: 0 16px; border: 1px solid var(--guide-border); border-radius: 15px; background: #f8fafb; color: var(--guide-sub); }
+  .additional-adjustments > summary { display: flex; min-height: 50px; align-items: center; gap: 8px 14px; color: var(--guide-secondary); font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; }
+  .additional-adjustments > summary::-webkit-details-marker { display: none; }
+  .additional-adjustments > summary small { color: var(--guide-sub); font-size: 13px; font-weight: 500; }
+  .additional-adjustments > summary::after { content: "+"; margin-left: auto; color: var(--guide-accent); font-size: 22px; font-weight: 500; }
+  .additional-adjustments[open] > summary::after { content: "−"; }
+  .entry-section--secondary { margin-top: 0; padding: 4px 0 16px; border: 0; }
+  .selection-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; margin-top: 20px; padding: 18px 20px; border-radius: 15px; background: var(--guide-accent-soft); }
   .selection-actions p { margin: 0; color: var(--guide-sub); font-size: 14px; font-weight: 700; }
   .selection-actions > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .selection-actions button, .selection-actions a { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 8px; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+  .selection-actions button, .selection-actions a { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 10px 19px; border-radius: 11px; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease; }
   .selection-actions button { border: 1px solid var(--guide-accent); background: var(--guide-accent); color: #fff; }
-  .selection-actions button:hover:not(:disabled) { background: var(--primary-hover); }
+  .selection-actions button:hover:not(:disabled) { transform: translateY(-1px); background: var(--guide-accent-strong); }
   .selection-actions button:disabled { border-color: var(--guide-border); background: var(--guide-border); color: var(--guide-sub); cursor: not-allowed; }
-  .selection-actions a { border: 1px solid var(--guide-secondary); color: var(--guide-secondary); }
+  .selection-actions a { border: 1px solid var(--guide-secondary); background: #fff; color: var(--guide-secondary); }
   .selection-actions button:focus-visible, .selection-actions a:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
   .criteria-list { display: grid; gap: 9px; margin-top: 12px; }
-  .criteria-list article { min-width: 0; padding: 13px; border: 1px solid var(--guide-border); border-radius: 8px; background: var(--card-subtle); overflow-wrap: anywhere; }
+  .criteria-list article { min-width: 0; padding: 13px; border: 1px solid var(--guide-border); border-radius: 14px; background: var(--card-subtle); overflow-wrap: anywhere; }
   .criteria-list dl { display: grid; gap: 6px; margin: 0; }
   .criteria-list dl div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; }
   .criteria-list dt { font-weight: 800; }
   .criteria-list dd { min-width: 0; margin: 0; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   @media (max-width: 960px) {
-    .entry-sections { grid-template-columns: 1fr; }
-    .situation-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .condition-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 720px) {
     .situation-adjuster { scroll-margin-top: 112px; }
   }
   @media (max-width: 600px) {
-    .situation-adjuster { padding: 20px 14px; }
+    .situation-adjuster { padding: 22px 14px 18px; border-radius: 18px; }
+    .entry-section { padding: 16px 0 18px 0; }
+    .entry-section legend { margin-left: 0; }
     .choice-card { min-height: 78px; }
     .situation-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .selection-actions { align-items: stretch; flex-direction: column; }
+    .selection-actions { align-items: stretch; flex-direction: column; padding: 16px; }
     .selection-actions > div { display: grid; grid-template-columns: 1fr; }
     .selection-actions button, .selection-actions a { width: 100%; }
     .criteria-list dl div { grid-template-columns: 1fr; gap: 1px; }
   }
   @media (max-width: 410px) {
     .situation-options, .condition-options { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .choice-card, .selection-actions button, .selection-actions a { transition: none; }
+    .choice-card:hover, .selection-actions button:hover:not(:disabled) { transform: none; }
   }
 </style>
 
