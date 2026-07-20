@@ -98,7 +98,7 @@ export const soundEuphoniumUjiHalfDay = {
       initialCenter: [135.8075, 34.8915],
     },
     timeline: {
-      title: "10:00出発の推奨ルート",
+      title: "巡る順番",
       description: "西岸を南から北へ巡り、朝霧橋側で東岸へ渡ったあと、大吉山を往復して京阪宇治駅へ向かいます。",
     },
     practicalInfo: {
@@ -158,6 +158,7 @@ export const soundEuphoniumUjiHalfDay = {
         "keihan-uji-station",
       ],
       fieldVerified: false,
+      hasArrivalSchedule: true,
     },
     shortWithoutDaikichiyama: {
       label: "大吉山を省略",
@@ -173,6 +174,10 @@ export const soundEuphoniumUjiHalfDay = {
         "keihan-uji-station",
       ],
       fieldVerified: false,
+      hasArrivalSchedule: false,
+      timelineTransfers: {
+        "ujigami-shrine": "徒歩約9分",
+      },
       note: "短縮接続経路は徒歩ルーティングによる推定です。現地歩行は未確認です。",
     },
     twoHourCore: {
@@ -186,6 +191,11 @@ export const soundEuphoniumUjiHalfDay = {
         "keihan-uji-station",
       ],
       fieldVerified: false,
+      hasArrivalSchedule: false,
+      timelineTransfers: {
+        "jr-uji-station-tourist-info": "徒歩約15分",
+        "ujigami-shrine": "徒歩約9分",
+      },
       note: "2時間ルートは徒歩ルーティングと既存案内による推定です。現地歩行は未確認です。",
       estimatedDuration: "約1時間35分〜2時間",
     },

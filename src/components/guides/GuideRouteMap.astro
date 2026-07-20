@@ -304,7 +304,7 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       const markerElement = document.createElement("button");
       markerElement.className = "route-map-marker";
       markerElement.type = "button";
-      markerElement.textContent = String(location.order);
+      markerElement.textContent = String(location.order).padStart(2, "0");
       markerElement.setAttribute("aria-label", `${location.order}. ${location.name}`);
 
       const popupContent = document.createElement("div");
@@ -323,6 +323,8 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
         .addTo(map);
+      marker.routeLocation = location;
+      marker.popupNameElement = popupName;
       registerMarkerFocus(marker);
       layerMarkers.spots.push(marker);
       routeMarkers.set(location.slug, marker);
@@ -419,7 +421,16 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
 
     const syncSpotMarkerVisibility = () => {
       const layerVisible = document.querySelector('[data-map-layer="spots"]')?.getAttribute("aria-pressed") === "true";
+      const visibleLocations = routeLocations.filter((location) => activeSpotSlugs.has(location.slug));
+      const displayOrder = new Map(visibleLocations.map((location, index) => [location.slug, index + 1]));
       routeMarkers.forEach((marker, slug) => {
+        const location = marker.routeLocation;
+        const order = displayOrder.get(slug);
+        if (order) {
+          marker.getElement().textContent = String(order).padStart(2, "0");
+          marker.getElement().setAttribute("aria-label", `${order}. ${location.name}`);
+          marker.popupNameElement.textContent = `${order}. ${location.name}`;
+        }
         const visible = layerVisible && activeSpotSlugs.has(slug);
         setMarkerVisibility(marker, visible);
       });
