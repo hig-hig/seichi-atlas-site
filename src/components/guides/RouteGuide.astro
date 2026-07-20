@@ -35,7 +35,7 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
 }]))).replace(/</g, "\\u003c");
 ---
 
-<main class="route-page">
+<main class="route-page" data-route-page>
   <div class="route-container">
     <nav class="breadcrumb" aria-label="パンくずリスト">
       {content.breadcrumbs.map((item, index) => (
@@ -51,7 +51,7 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
         <span>{content.hero.workTitle}</span>
         {content.hero.courseTitle}
       </h1>
-      <section class="hero-route-result" aria-label="現在選択中のルート">
+      <section class="hero-route-result" aria-label="現在選択中のルート" data-guide-result-summary>
         <div class="hero-route-heading">
           <h2 data-overview-route>{initialRecommendation.label}</h2>
           <span class="route-status" data-overview-status>{initialVariant.fieldVerified ? "確認済み" : "現地未確認"}</span>
@@ -62,9 +62,13 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
           <div><dt>START</dt><dd>{route.start}</dd></div>
           <div><dt>GOAL</dt><dd>{route.end}</dd></div>
         </dl>
+        <button type="button" class="conditions-reopen" data-conditions-reopen>条件を変更</button>
       </section>
     </header>
 
+    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
+
+    <div data-guide-result-view>
     <GuideRouteMap
       locations={mapLocations}
       supportFacilities={route.supportFacilities ?? []}
@@ -78,8 +82,6 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
       editMapUrl={content.map.editUrl}
       initialCenter={content.map.initialCenter}
     />
-
-    {content.situationAdjuster && <RouteSituationAdjuster config={content.situationAdjuster} routeVariants={routeVariants} />}
 
     <details class="verification-notice">
       <summary>{content.verification.title}</summary>
@@ -224,6 +226,7 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
         {content.checkItems.map((item) => <li>{item}</li>)}
       </ul>
     </section>
+    </div>
   </div>
   <RouteMobileNav routeVariants={routeVariants} initialRouteVariant={initialRecommendation.routeVariant} />
 </main>
@@ -231,11 +234,13 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
 <script>
   import { setupRouteAnalytics } from "../../scripts/routeAnalytics.js";
   import { setupRouteExitOptions } from "../../scripts/routeExitOptions.js";
+  import { setupRouteGuideView } from "../../scripts/routeGuideView.js";
   import { setupRouteMobileNav } from "../../scripts/routeMobileNav.js";
   import { setupRouteTimelines } from "../../scripts/routeTimeline.js";
 
   setupRouteAnalytics();
   setupRouteExitOptions();
+  setupRouteGuideView();
   setupRouteMobileNav();
   setupRouteTimelines();
 </script>
@@ -270,6 +275,10 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
   .hero-route-meta div { min-width: 0; }
   .hero-route-meta dt { color: var(--guide-sub); font-size: 14px; font-weight: 700; }
   .hero-route-meta dd { margin: 2px 0 0; font-size: 16px; font-weight: 800; line-height: 1.4; }
+  .conditions-reopen { grid-column: 1 / -1; width: fit-content; min-height: 40px; padding: 7px 12px; border: 1px solid var(--guide-secondary); border-radius: 7px; background: var(--guide-card); color: var(--guide-secondary); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .conditions-reopen:focus-visible { outline: 3px solid var(--guide-accent); outline-offset: 3px; }
+  [data-guide-result-view][hidden], [data-guide-result-summary][hidden] { display: none; }
+  .route-page[data-guide-view="selection"] { padding-bottom: 40px; }
   .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
   .verification-notice summary, .verification-notice p { color: var(--guide-notice-text); }
   .verification-notice summary { font-weight: 800; cursor: pointer; }

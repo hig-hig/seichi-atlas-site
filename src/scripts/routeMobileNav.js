@@ -37,7 +37,13 @@ export function setupRouteMobileNav() {
       const target = targets.get(destination);
       if (!target) return;
       event.preventDefault();
-      target.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+      if (destination === "conditions") {
+        window.dispatchEvent(new CustomEvent("route:guide-view-request", {
+          detail: { view: "selection", source: "mobile_nav" },
+        }));
+      } else {
+        target.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+      }
       setActive(destination);
       sendRouteEvent("route_mobile_nav_click", {
         destination,

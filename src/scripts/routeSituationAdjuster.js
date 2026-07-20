@@ -52,30 +52,28 @@ export function setupRouteSituationAdjusters() {
     const config = JSON.parse(root.querySelector("[data-situation-config]")?.textContent || "null");
     if (!config) return;
 
-    const situationInputs = [...root.querySelectorAll("[data-situation]")];
-    const conditionGroups = [...root.querySelectorAll("[data-condition-group]")];
-    const resultTitle = root.querySelector("[data-result-title]");
-    const resultTiming = root.querySelector("[data-result-timing]");
-    const resultSpots = root.querySelector("[data-result-spots]");
-    const resultNote = root.querySelector("[data-result-note]");
-    const primaryLink = root.querySelector("[data-situation-cta]");
-    const secondaryLink = root.querySelector("[data-situation-secondary]");
+    const choiceInputs = [...root.querySelectorAll("[data-recommendation-choice]")];
+    const submitButton = root.querySelector("[data-recommendation-submit]");
+    const standardLink = root.querySelector("[data-standard-direct]");
+    const selectionStatus = root.querySelector("[data-selection-status]");
     let selectedSituation = config.situations[0];
     let selectedCondition = "";
-    let currentRecommendation = selectedSituation.recommendation;
+    let currentRecommendation = selectedSituation.recommendation || "standard";
     let currentResult = config.recommendations[currentRecommendation];
+    let pendingRecommendation = "";
 
-    const recommendationDetail = () => {
-      const routeVariant = config.routeVariants[currentResult.routeVariant];
+    const recommendationDetail = (recommendation = currentRecommendation) => {
+      const result = config.recommendations[recommendation];
+      const routeVariant = config.routeVariants[result.routeVariant];
       return {
-        recommendation: currentRecommendation,
-        routeVariant: currentResult.routeVariant,
-        label: currentResult.label,
-        timing: currentResult.timing,
-        note: currentResult.note,
+        recommendation,
+        routeVariant: result.routeVariant,
+        label: result.label,
+        timing: result.timing,
+        note: result.note,
         spotCount: routeVariant.visibleSpotCount,
         fieldVerified: routeVariant.fieldVerified ?? routeVariant.verified ?? false,
-        cta: currentResult.cta,
+        cta: result.cta,
       };
     };
 
@@ -83,49 +81,12 @@ export function setupRouteSituationAdjusters() {
       currentRecommendation = recommendation;
       currentResult = config.recommendations[recommendation];
       const detail = recommendationDetail();
-      resultTitle.textContent = detail.label;
-      resultTiming.textContent = detail.timing;
-      resultSpots.textContent = `${detail.spotCount}地点`;
-      resultNote.textContent = detail.note;
-      primaryLink.href = currentResult.href;
-      primaryLink.textContent = detail.cta;
-      primaryLink.removeAttribute("aria-disabled");
-      if (currentResult.secondary) {
-        secondaryLink.hidden = false;
-        secondaryLink.href = currentResult.secondary.href;
-        secondaryLink.textContent = currentResult.secondary.label;
-      } else {
-        secondaryLink.hidden = true;
-        secondaryLink.removeAttribute("href");
-        secondaryLink.textContent = "";
-      }
       const mapSummary = `${currentResult.mapAction.summary}｜${detail.spotCount}地点｜${detail.timing}`;
       announceMapSummary(mapSummary);
       applyMapAction(currentResult);
       updatePageOverview(detail);
       window.routeSituationState = detail;
       window.dispatchEvent(new CustomEvent("route:recommendation-change", { detail }));
-    };
-
-    const showPendingResult = () => {
-      currentResult = null;
-      currentRecommendation = "";
-      resultTitle.textContent = "追加条件を選択してください";
-      resultTiming.textContent = "選択後に時間の目安を表示します。";
-      resultSpots.textContent = "—";
-      resultNote.textContent = "現在の状況に必要な条件だけを確認します。";
-      primaryLink.removeAttribute("href");
-      primaryLink.textContent = "追加条件を選択してください";
-      primaryLink.setAttribute("aria-disabled", "true");
-      secondaryLink.hidden = true;
-      announceMapSummary("条件を選択すると地図表示が更新されます");
-    };
-
-    const showConditionGroup = (conditionGroup) => {
-      conditionGroups.forEach((group) => {
-        group.hidden = group.dataset.conditionGroup !== conditionGroup;
-        setChecked([...group.querySelectorAll("[data-condition]")], null);
-      });
     };
 
     const sendSituationSelection = (location) => {
@@ -145,81 +106,38 @@ export function setupRouteSituationAdjusters() {
       }, null);
     };
 
-    const selectSituation = (situation, location) => {
-      selectedSituation = situation;
-      selectedCondition = "";
-      const input = situationInputs.find((item) => item.dataset.situation === situation.value);
-      setChecked(situationInputs, input);
-      showConditionGroup(situation.conditionGroup);
-      sendSituationSelection(location);
-      if (situation.recommendation) renderResult(situation.recommendation);
-      else showPendingResult();
-    };
-
-    const selectCondition = (group, condition, location) => {
-      selectedCondition = condition.value;
-      const inputs = [...group.querySelectorAll("[data-condition]")];
-      const input = inputs.find((item) => item.dataset.condition === condition.value);
-      setChecked(inputs, input);
-      renderResult(condition.recommendation);
-      sendConditionSelection(location);
-    };
-
-    situationInputs.forEach((input) => {
-      input.addEventListener("change", () => {
-        const situation = config.situations.find((item) => item.value === input.dataset.situation);
-        selectSituation(situation, "adjuster");
-      });
-    });
-
-    conditionGroups.forEach((group) => {
-      const inputs = [...group.querySelectorAll("[data-condition]")];
-      inputs.forEach((input) => {
-        input.addEventListener("change", () => {
-          const groupConfig = config.conditionGroups[group.dataset.conditionGroup];
-          const condition = groupConfig.options.find((item) => item.value === input.dataset.condition);
-          selectCondition(group, condition, "adjuster");
-        });
-      });
-    });
-
-    const handleRecommendationRequest = (detail) => {
-      window.routeSituationPendingRecommendation = null;
-      const recommendation = detail.recommendation;
-      const location = detail.interactionLocation || "map";
+    const selectRecommendationSource = (recommendation, location) => {
       const directSituation = config.situations.find((item) => item.recommendation === recommendation);
       if (directSituation) {
-        selectSituation(directSituation, location);
+        selectedSituation = directSituation;
+        selectedCondition = "";
+        sendSituationSelection(location);
         return;
       }
       for (const situation of config.situations) {
         if (!situation.conditionGroup) continue;
-        const groupConfig = config.conditionGroups[situation.conditionGroup];
-        const condition = groupConfig.options.find((item) => item.recommendation === recommendation);
+        const condition = config.conditionGroups[situation.conditionGroup].options
+          .find((item) => item.recommendation === recommendation);
         if (!condition) continue;
         selectedSituation = situation;
-        const situationInput = situationInputs.find((item) => item.dataset.situation === situation.value);
-        setChecked(situationInputs, situationInput);
-        showConditionGroup(situation.conditionGroup);
+        selectedCondition = condition.value;
         sendSituationSelection(location);
-        const group = conditionGroups.find((item) => item.dataset.conditionGroup === situation.conditionGroup);
-        selectCondition(group, condition, location);
+        renderResult(recommendation);
+        sendConditionSelection(location);
         return;
       }
+      renderResult(recommendation);
     };
 
-    window.addEventListener("route:request-recommendation", (event) => {
-      handleRecommendationRequest(event.detail);
-    });
+    const syncChoice = (recommendation) => {
+      pendingRecommendation = recommendation;
+      const selected = choiceInputs.find((input) => input.dataset.recommendationChoice === recommendation);
+      setChecked(choiceInputs, selected);
+      if (selectionStatus) selectionStatus.textContent = config.recommendations[recommendation]?.label || "条件を1つ選択";
+      if (submitButton) submitButton.disabled = !selected;
+    };
 
-    primaryLink.addEventListener("click", (event) => {
-      if (!currentResult) {
-        event.preventDefault();
-        return;
-      }
-      event.preventDefault();
-      applyMapAction(currentResult);
-      document.querySelector("#route-map")?.scrollIntoView();
+    const sendOpenEvent = (location) => {
       sendRouteEvent("open_situation_recommendation", {
         situation: selectedSituation.value,
         condition: selectedCondition || undefined,
@@ -230,12 +148,64 @@ export function setupRouteSituationAdjusters() {
         map_target: mapTargetValue(currentResult.mapAction),
         route_variant: currentResult.routeVariant,
         visible_spot_count: config.routeVariants[currentResult.routeVariant].visibleSpotCount,
-        interaction_location: "adjuster",
+        interaction_location: location,
       }, null);
+    };
+
+    const handleRecommendationRequest = (detail, action = "external") => {
+      window.routeSituationPendingRecommendation = null;
+      const recommendation = detail.recommendation;
+      const location = detail.interactionLocation || "map";
+      syncChoice(recommendation);
+      selectRecommendationSource(recommendation, location);
+      if (config.situations.some((item) => item.recommendation === recommendation)) renderResult(recommendation);
+
+      if (action === "submit") {
+        sendOpenEvent("guide_entry");
+        sendRouteEvent("route_recommendation_submit", {
+          route_variant: currentResult.routeVariant,
+          interaction_location: "guide_entry",
+        }, null);
+      } else if (action === "standard") {
+        sendOpenEvent("guide_entry");
+        sendRouteEvent("route_standard_direct", {
+          route_variant: "standard",
+          interaction_location: "guide_entry",
+        }, null);
+      }
+
+      if (action === "submit" || action === "standard") {
+        window.dispatchEvent(new CustomEvent("route:guide-view-request", {
+          detail: { view: "result", source: action },
+        }));
+      }
+    };
+
+    choiceInputs.forEach((input) => {
+      input.addEventListener("change", () => syncChoice(input.dataset.recommendationChoice));
     });
 
-    const pendingRecommendation = window.routeSituationPendingRecommendation;
-    if (pendingRecommendation) handleRecommendationRequest(pendingRecommendation);
-    else renderResult(currentRecommendation);
+    window.addEventListener("route:request-recommendation", (event) => {
+      handleRecommendationRequest(event.detail);
+    });
+
+    submitButton?.addEventListener("click", () => {
+      if (!pendingRecommendation || submitButton.disabled) return;
+      submitButton.disabled = true;
+      handleRecommendationRequest({ recommendation: pendingRecommendation, interactionLocation: "guide_entry" }, "submit");
+    });
+
+    standardLink?.addEventListener("click", (event) => {
+      event.preventDefault();
+      handleRecommendationRequest({ recommendation: "standard", interactionLocation: "guide_entry" }, "standard");
+    });
+
+    window.addEventListener("route:guide-view-change", (event) => {
+      if (event.detail.view === "selection" && submitButton) submitButton.disabled = !pendingRecommendation;
+    });
+
+    const queuedRecommendation = window.routeSituationPendingRecommendation;
+    if (queuedRecommendation) handleRecommendationRequest(queuedRecommendation);
+    else renderResult("standard");
   });
 }

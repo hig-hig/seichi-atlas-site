@@ -292,9 +292,14 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
         routeToggle?.focus();
       });
     });
-    document.querySelector("[data-map-all-conditions]")?.addEventListener("click", () => {
-      setRoutePanelOpen(false);
-      window.setTimeout(() => document.querySelector("#situation-adjuster")?.focus({ preventScroll: true }), 0);
+    document.querySelectorAll("[data-map-all-conditions], .map-adjuster-link a").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        setRoutePanelOpen(false);
+        window.dispatchEvent(new CustomEvent("route:guide-view-request", {
+          detail: { view: "selection", source: "map" },
+        }));
+      });
     });
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape" || routePanel?.hidden) return;
@@ -568,6 +573,13 @@ const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visib
       if (summaryElement) summaryElement.textContent = event.detail.summary;
     });
     window.addEventListener("route:apply-map-action", (event) => applyMapState(event.detail));
+    window.addEventListener("route:guide-view-change", (event) => {
+      if (event.detail.view !== "result") return;
+      window.requestAnimationFrame(() => {
+        map.resize();
+        if (pendingMapState) applyMapState(pendingMapState);
+      });
+    });
     window.addEventListener("route:spot-select", (event) => {
       routeMarkers.forEach((marker, slug) => {
         marker.getElement().classList.toggle("is-selected", Boolean(event.detail.slug) && slug === event.detail.slug);

@@ -26,8 +26,8 @@ export const soundEuphoniumUjiHalfDay = {
       description: "このルートは公開情報と地図データを基にした試作です。営業時間、通行状況、登山道の状態は、出発直前に各施設・自治体などの公式情報で確認してください。",
     },
     situationAdjuster: {
-      title: "今の状況に合わせて回り方を調整",
-      description: "時間・天候・歩く量を選ぶと、確認済みの情報から回り方を案内します。",
+      title: "今の状況からルートを選ぶ",
+      description: "時間・天候・歩く量を選んでください。",
       privacyItems: [
         "病名や具体的な健康情報は入力・取得しない",
         "正確な位置情報は取得しない",
@@ -76,6 +76,12 @@ export const soundEuphoniumUjiHalfDay = {
         { label: "雨", recommendation: "rain" },
         { label: "歩く量を減らす", recommendation: "less-walking" },
         { label: "休憩場所", recommendation: "rest" },
+      ],
+      entrySections: [
+        { label: "使える時間", recommendations: ["partial", "short", "standard"] },
+        { label: "天候", recommendations: ["rain", "temperature"] },
+        { label: "歩く量", recommendations: ["less-walking"] },
+        { label: "さらに調整する", secondary: true, recommendations: ["extra-30m", "extra-1h", "extra-2h", "rest"] },
       ],
       recommendations: {
         standard: { routeVariant: "standard", condition: "予定どおり／4時間以上", label: "標準ルート", timing: "約4時間30分", note: "全行程の所要時間と現地状況を出発前に確認してください。", cta: "地図で確認", href: "#route-map", layers: { spots: true, rest: true, "tourist-information": false, exit: false }, mapAction: { type: "fit-route", popup: false, summary: "標準ルート" } },
