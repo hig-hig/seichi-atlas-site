@@ -18,6 +18,13 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
   lng,
   detailUrl,
 }));
+const exitOptions = route.exitOptions ?? [];
+const exitOptionsBySlug = new Map(exitOptions.map((option) => [option.atSlug, option]));
+const mapExitPoints = exitOptions.map((option) => {
+  const spot = routeSpots.find((item) => item.slug === option.atSlug);
+  if (!spot) throw new Error(`Exit option spot not found: ${option.atSlug}`);
+  return { ...option, name: spot.name, lat: spot.lat, lng: spot.lng };
+});
 ---
 
 <main class="route-page">
@@ -85,6 +92,7 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
     <GuideRouteMap
       locations={mapLocations}
       supportFacilities={route.supportFacilities ?? []}
+      exitPoints={mapExitPoints}
       routeGeometry={routeGeometry}
       sectionTitle={content.map.title}
       description={content.map.description}
@@ -132,6 +140,32 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
                   data-route-target={spot.googleMapsUrl}
                 >Google Mapsで検索</a>
               </div>
+
+              {exitOptionsBySlug.has(spot.slug) && (() => {
+                const exitOption = exitOptionsBySlug.get(spot.slug);
+                const panelId = `exit-option-${exitOption.id}`;
+                return (
+                  <div class="exit-option" data-exit-option={exitOption.id}>
+                    <button
+                      type="button"
+                      aria-expanded="false"
+                      aria-controls={panelId}
+                      data-exit-toggle
+                    ><span>途中終了</span><span>ここで終了</span></button>
+                    <div id={panelId} class="exit-option-panel" hidden data-exit-panel>
+                      <h4>{exitOption.title}</h4>
+                      <p>{exitOption.guidance}</p>
+                      <dl>
+                        <div><dt>終了地点</dt><dd>{exitOption.endPoint}</dd></div>
+                        <div><dt>{exitOption.destinationLabel}</dt><dd>{exitOption.destination}</dd></div>
+                        <div><dt>省略する主な区間</dt><dd>{exitOption.omittedSection}</dd></div>
+                        {exitOption.timeSaved && <div><dt>短縮目安</dt><dd>{exitOption.timeSaved}</dd></div>}
+                      </dl>
+                      <a href="#route-map" data-show-exit-map data-route-choice>地図で途中終了地点を見る</a>
+                    </div>
+                  </div>
+                );
+              })()}
             </article>
 
             {spot.breakAfter && (
@@ -195,8 +229,10 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
 
 <script>
   import { setupRouteAnalytics } from "../../scripts/routeAnalytics.js";
+  import { setupRouteExitOptions } from "../../scripts/routeExitOptions.js";
 
   setupRouteAnalytics();
+  setupRouteExitOptions();
 
   let highlightedTarget;
   let highlightTimer;
@@ -286,6 +322,18 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
   .step-note { margin: 12px 0 0; color: var(--guide-sub); font-size: 14px; }
   .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   .step-actions a { padding: 8px 11px; border: 1px solid var(--guide-border); border-radius: 3px; background: #fff; color: var(--guide-accent); font-size: 13px; font-weight: 800; }
+  .exit-option { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--guide-border); }
+  .exit-option > button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid #795548; border-radius: 4px; background: #fff; color: #604137; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .exit-option > button span:first-child { padding-right: 8px; border-right: 1px solid #bda49c; font-size: 11px; }
+  .exit-option > button:focus-visible, .exit-option-panel a:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
+  .exit-option-panel { margin-top: 10px; padding: 15px; border-left: 3px solid #795548; background: #f8f3ef; }
+  .exit-option-panel h4 { margin: 0; font-size: 16px; }
+  .exit-option-panel > p { margin: 6px 0 0; color: var(--guide-sub); font-size: 13px; }
+  .exit-option-panel dl { display: grid; gap: 7px; margin: 10px 0 0; }
+  .exit-option-panel dl div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; }
+  .exit-option-panel dt { color: var(--guide-sub); font-size: 12px; font-weight: 800; }
+  .exit-option-panel dd { margin: 0; font-size: 13px; }
+  .exit-option-panel a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; padding: 9px 12px; border-radius: 4px; background: #604137; color: #fff; font-size: 13px; font-weight: 800; }
   .break-card { grid-column: 2; margin-top: 10px; padding: 14px 16px; border-left: 3px solid var(--guide-accent); background: var(--guide-accent-soft); }
   .break-card p { margin: 0; color: var(--guide-accent); font-size: 12px; font-weight: 800; }
   .break-card h3 { margin: 2px 0; font-size: 17px; }
@@ -318,6 +366,8 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
     .timeline-item:not(:last-child)::before { left: 18px; }
     .timeline-marker { width: 38px; height: 38px; }
     .timeline-card { padding: 16px 14px; }
+    .exit-option > button, .exit-option-panel a { width: 100%; justify-content: center; }
+    .exit-option-panel dl div { grid-template-columns: 1fr; gap: 1px; }
     .timeline-head { display: block; }
     .stay-badge { display: inline-block; margin-top: 9px; }
     .break-card { grid-column: 2; }

@@ -65,6 +65,9 @@ export function setupRouteAnalytics() {
       parameters.route_layer = actionLink.dataset.routeLayer;
       parameters.route_visible = actionLink.dataset.routeVisible === "true";
     }
+    if (actionLink.dataset.routeExitOption) {
+      parameters.exit_option = actionLink.dataset.routeExitOption;
+    }
 
     sendRouteEvent(
       "route_action",

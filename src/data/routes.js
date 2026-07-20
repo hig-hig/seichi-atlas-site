@@ -179,6 +179,20 @@ export const soundEuphoniumUjiHalfDay = {
       note: "多目的トイレ、Wi-Fi、雨天対応の案内があります。営業時間や設備の利用可否は変更される場合があるため、利用前に公式情報を確認してください。",
     },
   ],
+  exitOptions: [
+    {
+      id: "before-daikichiyama",
+      atSlug: "ujigami-shrine",
+      title: "大吉山へ入る前に終了",
+      guidance: "ここで標準ルートを終了し、大吉山を省く既存の短縮ルートへ切り替えます。",
+      endPoint: "宇治上神社周辺（大吉山へ入る前）",
+      destinationLabel: "既存ルート上の終点",
+      destination: "京阪宇治駅",
+      omittedSection: "大吉山展望台への上り・見学・下りと、下山後の休憩",
+      timeSaved: "約65分",
+      mapLabel: "途中終了",
+    },
+  ],
   steps: [
     {
       slug: "jr-uji-station-tourist-info",
