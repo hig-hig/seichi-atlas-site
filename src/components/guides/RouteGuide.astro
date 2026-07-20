@@ -25,6 +25,8 @@ const mapExitPoints = exitOptions.map((option) => {
   if (!spot) throw new Error(`Exit option spot not found: ${option.atSlug}`);
   return { ...option, name: spot.name, lat: spot.lat, lng: spot.lng };
 });
+const initialRecommendation = content.situationAdjuster.recommendations.standard;
+const initialVariant = routeVariants[initialRecommendation.routeVariant];
 ---
 
 <main class="route-page">
@@ -45,18 +47,25 @@ const mapExitPoints = exitOptions.map((option) => {
       </h1>
       <p class="hero-lead">{content.hero.lead}</p>
 
+      <section class="hero-route-result" aria-label="現在選択中のルート">
+        <p>現在選択中のルート</p>
+        <h2 data-overview-route>{initialRecommendation.label}</h2>
+        <div><strong data-overview-timing>{initialRecommendation.timing}</strong><span data-overview-spots>{initialVariant.visibleSpotSlugs.length}地点</span></div>
+        <p data-overview-note>{initialRecommendation.note}</p>
+      </section>
+
       <dl class="route-facts" aria-label="コース概要">
         {content.hero.facts.map((fact) => (
-          <div><dt>{fact.label}</dt><dd>{fact.value}</dd></div>
+          <div><dt>{fact.label === "徒歩距離" ? "標準ルート距離" : fact.label}</dt><dd data-overview-timing={fact.label === "所要時間" ? true : undefined}>{fact.label === "所要時間" ? initialRecommendation.timing : fact.value}</dd></div>
         ))}
       </dl>
 
       <ul class="route-tags" aria-label="コースの特徴">
-        {content.hero.tags.map((tag) => <li>{tag}</li>)}
+        {content.hero.tags.map((tag) => <li data-overview-spots={tag === "9スポット" ? true : undefined}>{tag === "9スポット" ? "9地点" : tag}</li>)}
       </ul>
 
       <a class="map-cta" href="#route-map" data-route-action="open-map" data-route-target="#route-map">
-        地図とルートを見る
+        <span data-overview-cta>{initialRecommendation.cta}</span>
         <span aria-hidden="true">↓</span>
       </a>
     </header>
@@ -73,6 +82,8 @@ const mapExitPoints = exitOptions.map((option) => {
       supportFacilities={route.supportFacilities ?? []}
       exitPoints={mapExitPoints}
       routeVariants={routeVariants}
+      recommendations={content.situationAdjuster.recommendations}
+      quickChoices={content.situationAdjuster.quickChoices}
       sectionTitle={content.map.title}
       description={content.map.description}
       mapAriaLabel={content.map.ariaLabel}
@@ -236,6 +247,11 @@ const mapExitPoints = exitOptions.map((option) => {
   .route-hero h1 { max-width: 820px; font-size: clamp(31px, 5.5vw, 50px); line-height: 1.25; }
   .route-hero h1 span { display: block; margin-bottom: 5px; color: var(--guide-sub); font-size: .48em; font-weight: 700; letter-spacing: .02em; }
   .hero-lead { max-width: 680px; margin: 16px 0 0; color: var(--guide-sub); font-size: 16px; }
+  .hero-route-result { max-width: 760px; min-height: 150px; margin-top: 24px; padding: 16px 18px; border: 1px solid #f1b38e; border-radius: 12px; background: #fff8f3; }
+  .hero-route-result > p:first-child { margin: 0; color: #9a3412; font-size: 14px; font-weight: 800; }
+  .hero-route-result h2 { margin: 3px 0 0; padding: 0; border: 0; font-size: clamp(22px, 3vw, 26px); }
+  .hero-route-result div { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px; font-size: 16px; }
+  .hero-route-result > p:last-child { margin: 7px 0 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .route-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 32px 0 0; border-top: 1px solid var(--guide-border); border-bottom: 1px solid var(--guide-border); }
   .route-facts div { min-width: 0; padding: 20px 18px; }
   .route-facts div + div { border-left: 1px solid var(--guide-border); }
@@ -245,8 +261,9 @@ const mapExitPoints = exitOptions.map((option) => {
   .route-tags li { padding: 0 13px; font-size: 12px; line-height: 1.5; }
   .route-tags li:first-child { padding-left: 0; }
   .route-tags li + li { border-left: 1px solid var(--guide-border); }
-  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 13px 19px; border-radius: 4px; background: #31575a; color: #fff; font-weight: 800; }
-  .map-cta span { font-size: 18px; }
+  .map-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 13px 19px; border-radius: 8px; background: #e85d18; color: #fff; font-weight: 800; }
+  .map-cta:hover { background: #c94a0d; }
+  .map-cta span:last-child { font-size: 18px; }
   .verification-notice { margin-top: 18px; padding: 18px 20px; border-left: 3px solid #9a8053; background: var(--guide-notice-bg); }
   .verification-notice strong, .verification-notice p { color: var(--guide-notice-text); }
   .verification-notice p { margin: 4px 0 0; }

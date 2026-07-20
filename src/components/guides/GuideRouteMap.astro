@@ -4,6 +4,8 @@ const {
   supportFacilities = [],
   exitPoints = [],
   routeVariants = {},
+  recommendations = {},
+  quickChoices = [],
   sectionTitle,
   description,
   mapAriaLabel,
@@ -36,6 +38,8 @@ const supportFacilitiesJson = JSON.stringify(supportFacilities.map((facility) =>
 }))).replace(/</g, "\\u003c");
 const exitPointsJson = JSON.stringify(exitPoints).replace(/</g, "\\u003c");
 const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c");
+const initialRecommendation = recommendations.standard;
+const initialSpotCount = routeVariants[initialRecommendation.routeVariant].visibleSpotSlugs.length;
 ---
 
 <section class="route-section map-section" id="route-map" aria-labelledby="route-map-heading" tabindex="-1">
@@ -45,7 +49,7 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
     <p>{description}</p>
   </div>
   <p class="map-result-summary" data-map-result-summary aria-live="polite">
-    <strong>現在の表示：</strong><span>標準ルート｜9地点</span>
+    <strong>現在の表示：</strong><span>{initialRecommendation.mapAction.summary}｜{initialSpotCount}地点｜{initialRecommendation.timing}</span>
   </p>
   <ul class="map-legend" aria-label="地図の凡例">
     <li><span class="legend-symbol legend-route" aria-hidden="true"></span>現在のルート</li>
@@ -78,6 +82,22 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
     </button>
   </div>
   <div class="route-map-shell">
+    <div class="map-route-switcher" data-map-route-switcher>
+      <button type="button" class="map-route-toggle" aria-expanded="false" aria-controls="map-route-panel" data-map-route-toggle>
+        ルートを変更
+      </button>
+      <div class="map-route-panel" id="map-route-panel" hidden data-map-route-panel>
+        <p>現在：<strong data-map-current-route>{initialRecommendation.label}</strong></p>
+        <div class="map-route-choices" aria-label="ルートの簡易選択">
+          {quickChoices.map((choice) => (
+            <button type="button" aria-pressed={choice.recommendation === "standard" ? "true" : "false"} data-map-recommendation={choice.recommendation}>
+              {choice.label}
+            </button>
+          ))}
+        </div>
+        <a href="#situation-adjuster" data-map-all-conditions>すべての条件を見る</a>
+      </div>
+    </div>
     <div id="guide-route-map" aria-label={mapAriaLabel} data-initial-center={JSON.stringify(initialCenter)}></div>
   </div>
   <p class="map-attribution-note">
@@ -104,24 +124,36 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
   .map-legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
   .map-legend li[hidden] { display: none; }
   .legend-symbol { display: inline-grid; flex: 0 0 auto; place-items: center; color: #fff; font: 800 14px/1 "Noto Sans JP", sans-serif; }
-  .legend-route { width: 30px; height: 5px; border: 3px solid rgba(255,255,255,.94); border-radius: 8px; background: #007c91; box-shadow: 0 0 0 1px rgba(47,52,55,.16); }
-  .legend-spot { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; background: #006d77; box-shadow: 0 0 0 1px rgba(47,52,55,.18); }
-  .legend-rest { min-width: 24px; height: 20px; padding: 0 4px; border-radius: 4px; background: #9a6200; }
+  .legend-route { width: 30px; height: 5px; border: 3px solid rgba(255,255,255,.96); border-radius: 8px; background: #f26a21; box-shadow: 0 0 0 1px rgba(47,52,55,.16); }
+  .legend-spot { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; background: #e85d18; box-shadow: 0 0 0 1px rgba(47,52,55,.18); }
+  .legend-rest { min-width: 24px; height: 20px; padding: 0 4px; border-radius: 4px; background: #8a5a00; }
   .legend-information { width: 22px; height: 20px; border-radius: 12px; background: #075985; }
   .legend-exit { width: 25px; height: 20px; padding-right: 3px; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%); background: #b43a2f; }
   .route-variant-notice { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-layer-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--guide-accent); border-radius: 4px; background: var(--guide-accent-soft); color: var(--guide-text); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .map-layer-controls button { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #f26a21; border-radius: 6px; background: #fff2e8; color: #9a3412; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
   .map-layer-controls button[aria-pressed="false"] { border-color: var(--guide-border); background: #fff; color: var(--guide-sub); }
   .map-layer-controls button:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
   .map-layer-controls small { font-size: 14px; font-weight: 700; }
-  .route-map-shell { height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+  .route-map-shell { position: relative; height: min(62vh, 540px); min-height: 380px; margin-top: 22px; overflow: hidden; border: 1px solid var(--guide-border); border-radius: 4px; }
+  .map-route-switcher { position: absolute; z-index: 3; top: 10px; left: 10px; width: min(320px, calc(100% - 20px)); font-size: 14px; }
+  .map-route-toggle { min-height: 42px; padding: 8px 13px; border: 1px solid #e85d18; border-radius: 8px; background: #fff; color: #9a3412; font: inherit; font-weight: 800; box-shadow: 0 2px 5px rgba(47,52,55,.18); cursor: pointer; }
+  .map-route-toggle[aria-expanded="true"] { background: #fff2e8; }
+  .map-route-panel { margin-top: 7px; padding: 13px; border: 1px solid #ded8d2; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 3px 9px rgba(47,52,55,.18); }
+  .map-route-panel[hidden] { display: none; }
+  .map-route-panel p { margin: 0; line-height: 1.5; }
+  .map-route-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
+  .map-route-choices button { min-height: 38px; padding: 6px 8px; border: 1px solid #ded8d2; border-radius: 7px; background: #fff; color: var(--guide-text); font: inherit; font-weight: 700; cursor: pointer; }
+  .map-route-choices button:hover { background: #fff8f3; }
+  .map-route-choices button[aria-pressed="true"] { border-color: #f26a21; background: #fff2e8; color: #9a3412; }
+  .map-route-panel a { display: inline-block; margin-top: 10px; color: #9a3412; font-weight: 800; text-decoration: underline; }
+  .map-route-toggle:focus-visible, .map-route-choices button:focus-visible, .map-route-panel a:focus-visible { outline: 3px solid #f26a21; outline-offset: 2px; }
   #guide-route-map { width: 100%; height: 100%; }
   .map-attribution-note { margin: 8px 2px 0; color: var(--guide-sub); font-size: 14px; line-height: 1.6; }
   .map-attribution-note a { text-decoration: underline; }
-  :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #006d77; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.22); cursor: pointer; }
+  :global(.route-map-marker) { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; background: #e85d18; color: #fff; font: 900 14px/1 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.22); cursor: pointer; }
   :global(.route-map-marker[hidden]), :global(.route-support-marker[hidden]), :global(.route-exit-marker[hidden]) { display: none; }
-  :global(.route-support-marker) { display: grid; place-items: center; min-width: 76px; min-height: 32px; padding: 4px 7px; border: 2px solid #fff; border-radius: 4px; background: #9a6200; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
+  :global(.route-support-marker) { display: grid; place-items: center; min-width: 76px; min-height: 32px; padding: 4px 7px; border: 2px solid #fff; border-radius: 4px; background: #8a5a00; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
   :global(.route-support-marker--information) { border-radius: 18px; background: #075985; }
   :global(.route-support-marker--information-toilet) { min-width: 96px; border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); background: #5b4a9c; }
   :global(.route-exit-marker) { display: grid; place-items: center; min-width: 82px; min-height: 34px; padding: 4px 12px 4px 9px; border: 2px solid #fff; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); background: #b43a2f; color: #fff; font: 800 14px/1.2 "Noto Sans JP", sans-serif; box-shadow: 0 2px 5px rgba(47,52,55,.24); cursor: pointer; }
@@ -169,6 +201,10 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
   const exitMarkers = new Map();
   const summaryElement = document.querySelector("[data-map-result-summary] span");
   const variantNotice = document.querySelector("[data-route-variant-notice]");
+  const routeToggle = document.querySelector("[data-map-route-toggle]");
+  const routePanel = document.querySelector("[data-map-route-panel]");
+  const mapCurrentRoute = document.querySelector("[data-map-current-route]");
+  const mapRecommendationButtons = [...document.querySelectorAll("[data-map-recommendation]")];
   const legendItems = new Map([...document.querySelectorAll("[data-legend-layer]")]
     .map((item) => [item.dataset.legendLayer, item]));
 
@@ -210,6 +246,40 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+    const setRoutePanelOpen = (open) => {
+      routeToggle?.setAttribute("aria-expanded", String(open));
+      if (routePanel) routePanel.hidden = !open;
+    };
+    const syncMapRecommendation = (detail) => {
+      if (mapCurrentRoute) mapCurrentRoute.textContent = detail.label;
+      mapRecommendationButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.mapRecommendation === detail.recommendation));
+      });
+    };
+    routeToggle?.addEventListener("click", () => {
+      setRoutePanelOpen(routeToggle.getAttribute("aria-expanded") !== "true");
+    });
+    mapRecommendationButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("route:request-recommendation", {
+          detail: { recommendation: button.dataset.mapRecommendation, interactionLocation: "map" },
+        }));
+        setRoutePanelOpen(false);
+        routeToggle?.focus();
+      });
+    });
+    document.querySelector("[data-map-all-conditions]")?.addEventListener("click", () => {
+      setRoutePanelOpen(false);
+      window.setTimeout(() => document.querySelector("#situation-adjuster")?.focus({ preventScroll: true }), 0);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || routePanel?.hidden) return;
+      setRoutePanelOpen(false);
+      routeToggle?.focus();
+    });
+    window.addEventListener("route:recommendation-change", (event) => syncMapRecommendation(event.detail));
+    if (window.routeSituationState) syncMapRecommendation(window.routeSituationState);
 
     routeLocations.forEach((location) => {
       const markerElement = document.createElement("button");
@@ -462,7 +532,7 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
         source: "guide-route",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "rgba(255,255,255,0.94)",
+          "line-color": "rgba(255,255,255,0.96)",
           "line-width": narrowMapMedia.matches ? 9 : 8,
           "line-opacity": 1,
         },
@@ -473,7 +543,7 @@ const routeVariantsJson = JSON.stringify(routeVariants).replace(/</g, "\\u003c")
         source: "guide-route",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
-          "line-color": "#007c91",
+          "line-color": "#f26a21",
           "line-width": narrowMapMedia.matches ? 5.5 : 5,
           "line-opacity": 1,
         },
