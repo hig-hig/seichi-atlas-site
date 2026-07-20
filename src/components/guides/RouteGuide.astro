@@ -47,7 +47,7 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
         {content.hero.tags.map((tag) => <li>{tag}</li>)}
       </ul>
 
-      <a class="map-cta" href="#route-map" data-route-action="open-map">
+      <a class="map-cta" href="#route-map" data-route-action="open-map" data-route-target="#route-map">
         地図とルートを見る
         <span aria-hidden="true">↓</span>
       </a>
@@ -98,12 +98,13 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
               <p class="step-note">{spot.note}</p>
 
               <div class="step-actions">
-                <a href={spot.detailUrl} data-route-action="open-spot">スポット詳細</a>
+                <a href={spot.detailUrl} data-route-action="open-spot" data-route-target={spot.slug}>スポット詳細</a>
                 <a
                   href={spot.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-route-action="open-google-maps"
+                  data-route-target={spot.googleMapsUrl}
                 >Google Mapsで検索</a>
               </div>
             </article>
@@ -126,12 +127,13 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
       <p>{route.option.description}</p>
       <p>{route.option.plan}</p>
       <div class="step-actions">
-        <a href={`/spots/${optionSpot.slug}/`} data-route-action="open-spot">{route.option.linkLabel}</a>
+        <a href={`/spots/${optionSpot.slug}/`} data-route-action="open-spot" data-route-target={optionSpot.slug}>{route.option.linkLabel}</a>
         <a
           href={`https://www.google.com/maps/search/?api=1&query=${optionSpot.lat},${optionSpot.lng}`}
           target="_blank"
           rel="noopener noreferrer"
           data-route-action="open-google-maps"
+          data-route-target={`https://www.google.com/maps/search/?api=1&query=${optionSpot.lat},${optionSpot.lng}`}
         >Google Mapsで検索</a>
       </div>
     </section>
@@ -147,6 +149,12 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
     </section>
   </div>
 </main>
+
+<script>
+  import { setupRouteAnalytics } from "../../scripts/routeAnalytics.js";
+
+  setupRouteAnalytics();
+</script>
 
 <style>
   .route-page {
