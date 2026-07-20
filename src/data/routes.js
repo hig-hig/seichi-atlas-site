@@ -50,7 +50,7 @@ export const soundEuphoniumUjiHalfDay = {
         },
         {
           title: "トイレ情報",
-          description: "このガイドの既存データでは、トイレの場所・利用時間・設備を確認できていません。JR宇治駅前で当日の案内を確認し、昼食エリアや大吉山へ入る前にも、利用できる場所を現地で確認してください。",
+          description: "宇治市観光センターは、宇治市公式情報でバリアフリー型トイレが案内されています。営業時間や設備の利用可否は変更される場合があるため、昼食や大吉山へ向かう前に現地の最新情報を確認してください。",
         },
         {
           title: "雨天時の注意",
@@ -75,6 +75,24 @@ export const soundEuphoniumUjiHalfDay = {
   start: "JR宇治駅",
   end: "京阪宇治駅",
   spotCount: 9,
+  supportFacilities: [
+    {
+      name: "宇治市観光センター",
+      categories: ["toilet", "rest", "tourist-information"],
+      address: "京都府宇治市宇治塔川2番地",
+      lat: 34.8889106,
+      lng: 135.8087507,
+      verificationStatus: "official",
+      verificationLabel: "公式情報で確認",
+      verifiedAt: "2026-07-20",
+      sourceUpdatedAt: "2024-12-16",
+      sourceName: "宇治市公式ホームページ",
+      sourceUrl: "https://www.city.uji.kyoto.jp/site/uji-kankou/3259.html",
+      note: "バリアフリー型トイレあり。営業時間や設備の利用可否は変更される場合があるため、利用前に公式情報を確認してください。",
+      openingHours: "9:00〜17:00",
+      fieldChecked: false,
+    },
+  ],
   steps: [
     {
       slug: "jr-uji-station-tourist-info",

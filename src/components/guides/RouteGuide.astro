@@ -60,6 +60,7 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
 
     <GuideRouteMap
       locations={mapLocations}
+      supportFacilities={route.supportFacilities ?? []}
       routeGeometry={routeGeometry}
       sectionTitle={content.map.title}
       description={content.map.description}
