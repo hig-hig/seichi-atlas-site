@@ -1,5 +1,6 @@
 ---
 import GuideRouteMap from "./GuideRouteMap.astro";
+import RouteMobileNav from "./RouteMobileNav.astro";
 import RouteSituationAdjuster from "./RouteSituationAdjuster.astro";
 
 const {
@@ -224,15 +225,18 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
       </ul>
     </section>
   </div>
+  <RouteMobileNav routeVariants={routeVariants} initialRouteVariant={initialRecommendation.routeVariant} />
 </main>
 
 <script>
   import { setupRouteAnalytics } from "../../scripts/routeAnalytics.js";
   import { setupRouteExitOptions } from "../../scripts/routeExitOptions.js";
+  import { setupRouteMobileNav } from "../../scripts/routeMobileNav.js";
   import { setupRouteTimelines } from "../../scripts/routeTimeline.js";
 
   setupRouteAnalytics();
   setupRouteExitOptions();
+  setupRouteMobileNav();
   setupRouteTimelines();
 </script>
 
@@ -346,11 +350,12 @@ const timelineVariantsJson = JSON.stringify(Object.fromEntries(Object.entries(ro
   .check-section ul { margin: 20px 0 0; padding-left: 20px; }
   .check-section li + li { margin-top: 8px; }
   @media (max-width: 720px) {
-    .route-page { padding: 12px 12px 56px; }
+    .route-page { padding: 12px 12px calc(104px + env(safe-area-inset-bottom)); overflow-x: clip; }
     .route-hero { padding: 16px 14px 18px; }
     .hero-route-result { grid-template-columns: 1fr; }
     .hero-route-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .route-section { padding: 20px 14px; }
+    #route-order-heading { scroll-margin-top: 112px; }
     .timeline-heading { display: block; }
     .timeline-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
     .timeline-summary-route { grid-column: 1 / -1; }

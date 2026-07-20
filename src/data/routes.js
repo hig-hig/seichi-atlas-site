@@ -145,6 +145,7 @@ export const soundEuphoniumUjiHalfDay = {
   routeVariants: {
     standard: {
       label: "標準ルート",
+      compactLabel: "標準",
       geometryKey: "standard",
       visibleSpotSlugs: [
         "jr-uji-station-tourist-info",
@@ -162,6 +163,7 @@ export const soundEuphoniumUjiHalfDay = {
     },
     shortWithoutDaikichiyama: {
       label: "大吉山を省略",
+      compactLabel: "短縮",
       geometryKey: "shortWithoutDaikichiyama",
       visibleSpotSlugs: [
         "jr-uji-station-tourist-info",
@@ -182,6 +184,7 @@ export const soundEuphoniumUjiHalfDay = {
     },
     twoHourCore: {
       label: "2時間コアルート",
+      compactLabel: "2時間",
       geometryKey: "twoHourCore",
       visibleSpotSlugs: [
         "jr-uji-station-tourist-info",
