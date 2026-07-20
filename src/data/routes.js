@@ -51,6 +51,27 @@ export const soundEuphoniumUjiHalfDay = {
         },
       ],
     },
+    recommendation: {
+      title: "今の状況に合うルート提案",
+      description: "現在時刻、使える時間、体力から目安となるルートを案内します。安全や完走を保証するものではありません。",
+      lateTime: "15:30",
+      routes: {
+        standard: { key: "standard", label: "標準ルート", duration: "約4時間30分", href: "#route-map" },
+        short: { key: "short", label: "大吉山なし短縮", duration: "約3時間15分〜3時間45分", href: "#short-route-guide" },
+        rain: { key: "rain", label: "雨天向け", href: "#rain-route-guide" },
+      },
+      availableTimeOptions: [
+        { value: "2h", label: "2時間以内" },
+        { value: "3h", label: "3時間程度" },
+        { value: "4h", label: "4時間以上" },
+      ],
+      staminaOptions: [
+        { value: "low", label: "控えめ" },
+        { value: "normal", label: "普通" },
+        { value: "high", label: "問題なし" },
+      ],
+      weatherNote: "天気は自動判定しません。雨天時は、上のクイック選択から「雨天向け」を選び、既存の雨天案内を確認してください。",
+    },
     map: {
       title: "9スポットの位置関係",
       description: "道に沿った参考ルートです。徒歩ナビではありません。工事・通行止め・登山道の状態などにより、現地では経路が異なる場合があります。",

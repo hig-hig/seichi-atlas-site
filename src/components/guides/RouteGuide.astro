@@ -1,5 +1,6 @@
 ---
 import GuideRouteMap from "./GuideRouteMap.astro";
+import RouteRecommendation from "./RouteRecommendation.astro";
 
 const {
   route,
@@ -78,6 +79,8 @@ const mapLocations = routeSpots.map(({ order, name, slug, lat, lng, detailUrl })
         </div>
       </section>
     )}
+
+    {content.recommendation && <RouteRecommendation config={content.recommendation} />}
 
     <GuideRouteMap
       locations={mapLocations}

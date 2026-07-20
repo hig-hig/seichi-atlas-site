@@ -1,0 +1,67 @@
+---
+const { config } = Astro.props;
+const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
+---
+
+<section class="route-recommendation" aria-labelledby="route-recommendation-heading" data-route-recommendation>
+  <div class="section-heading">
+    <p class="section-label">条件から提案</p>
+    <h2 id="route-recommendation-heading">{config.title}</h2>
+    <p>{config.description}</p>
+  </div>
+
+  <div class="recommendation-inputs">
+    <label>
+      <span>現在時刻</span>
+      <input type="time" required data-recommendation-time />
+    </label>
+    <label>
+      <span>使える時間</span>
+      <select data-recommendation-available>
+        {config.availableTimeOptions.map((option) => <option value={option.value}>{option.label}</option>)}
+      </select>
+    </label>
+    <label>
+      <span>体力</span>
+      <select data-recommendation-stamina>
+        {config.staminaOptions.map((option) => <option value={option.value}>{option.label}</option>)}
+      </select>
+    </label>
+  </div>
+
+  <div class="recommendation-result" aria-live="polite">
+    <strong data-recommendation-title>おすすめを計算しています</strong>
+    <p data-recommendation-reason></p>
+    <a href={config.routes.short.href} data-recommendation-link data-route-choice>おすすめを見る</a>
+  </div>
+  <p class="weather-note">{config.weatherNote}</p>
+  <script type="application/json" data-route-recommendation-config set:html={configJson}></script>
+</section>
+
+<style>
+  .route-recommendation { margin-top: 18px; padding: 24px; background: var(--guide-card); }
+  .section-label { margin: 0 0 6px; color: var(--guide-accent); font-size: 12px; font-weight: 700; }
+  .section-heading h2 { margin: 0; padding: 0; border: 0; font-size: 22px; }
+  .section-heading > p:last-child { margin: 8px 0 0; color: var(--guide-sub); }
+  .recommendation-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+  .recommendation-inputs label { display: grid; gap: 6px; color: var(--guide-text); font-size: 13px; font-weight: 800; }
+  .recommendation-inputs input, .recommendation-inputs select { width: 100%; min-height: 46px; padding: 9px 11px; border: 1px solid var(--guide-border); border-radius: 4px; background: #fff; color: var(--guide-text); font: inherit; }
+  .recommendation-inputs input:focus-visible, .recommendation-inputs select:focus-visible { outline: 3px solid #9a8053; outline-offset: 2px; }
+  .recommendation-result { margin-top: 16px; padding: 18px; border-left: 4px solid var(--guide-accent); background: var(--guide-accent-soft); }
+  .recommendation-result strong { display: block; font-size: 19px; }
+  .recommendation-result p { margin: 6px 0 0; color: var(--guide-sub); font-size: 14px; }
+  .recommendation-result a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 13px; padding: 9px 14px; border-radius: 4px; background: #31575a; color: #fff; font-size: 13px; font-weight: 800; }
+  .recommendation-result a:focus-visible { outline: 3px solid #9a8053; outline-offset: 3px; }
+  .weather-note { margin: 12px 0 0; color: var(--guide-sub); font-size: 13px; }
+  @media (max-width: 720px) {
+    .route-recommendation { padding: 20px 14px; }
+    .recommendation-inputs { grid-template-columns: 1fr; }
+    .recommendation-result a { width: 100%; justify-content: center; }
+  }
+</style>
+
+<script>
+  import { setupRouteRecommendations } from "../../scripts/routeRecommendation.js";
+
+  setupRouteRecommendations();
+</script>
